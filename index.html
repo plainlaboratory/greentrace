@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GreenTrace — Mobility</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: white;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .selectable-btn.active {
+            background-color: #38bdf8 !important;
+            color: #0f172a !important;
+            border-color: transparent !important;
+            transform: scale(0.95);
+        }
+
+        .main-btn[data-id="walk"].active { background-color: #00ff9f !important; }
+        .main-btn[data-id="pt"].active { background-color: #00b3ff !important; }
+        .main-btn[data-id="car"].active { background-color: #ff0055 !important; }
+        .main-btn[data-id="alt"].active { background-color: #f3ff00 !important; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        canvas { filter: drop-shadow(0 0 10px rgba(255,255,255,0.05)); }
+
+        #btn-save:not(:disabled) {
+            opacity: 1 !important;
+            filter: grayscale(0) !important;
+            cursor: pointer !important;
+        }
+
+        #total-dist {
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            letter-spacing: -1px;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-20">
+<div id="app" class="max-w-md mx-auto relative">
+
+        <header class="p-6 pb-0">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h1 class="text-3xl font-black italic tracking-tighter italic leading-none"><span class="text-[#00ff9f]">GREEN</span><span class="text-white">TRACE</span></h1>
+                </div>
+            </div>
+
+            <div class="flex gap-2 p-1 bg-white/5 rounded-2xl mb-6 border border-white/10">
+                <button data-view="dist" class="view-btn flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active">Distanz</button>
+                <button data-view="energy" class="view-btn flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all opacity-40">Energie</button>
+                <button data-view="co2" class="view-btn flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all opacity-40">CO₂</button>
+            </div>
+
+            <div class="glass rounded-[2.5rem] p-6 mb-8 border border-white/5 shadow-2xl relative">
+                <div class="relative h-[220px] w-full">
+                    <canvas id="mainChart"></canvas>
+
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span id="total-dist" class="text-4xl font-black text-white leading-none">0.0</span>
+                        <span class="text-[8px] font-bold text-[#00ff9f] uppercase tracking-[0.2em] mt-1">Gesamt KM</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <nav class="px-6 mb-6">
+            <div class="flex gap-2 overflow-x-auto no-scrollbar py-2">
+                <button data-id="all" class="filter-btn selectable-btn active px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">Alle</button>
+                <button data-id="walk" class="filter-btn selectable-btn px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">Zu Fuss</button>
+                <button data-id="pt" class="filter-btn selectable-btn px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">ÖPNV</button>
+                <button data-id="car" class="filter-btn selectable-btn px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">Auto</button>
+                <button data-id="alt" class="filter-btn selectable-btn px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">Alternative</button>
+            </div>
+        </nav>
+
+        <main id="activities-list" class="px-6 flex flex-col gap-4">
+            <div id="empty-state" class="py-20 text-center opacity-20">
+                <p class="text-xs font-bold uppercase tracking-widest">Keine Fahrten gefunden</p>
+            </div>
+        </main>
+
+        <button onclick="ui.openModal()" class="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-2xl shadow-[0_10px_40px_rgba(255,255,255,0.2)] flex items-center justify-center text-black active:scale-90 active:rotate-90 transition-all z-50">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+
+        <button onclick="ui.exportToCSV()" class="fixed bottom-8 left-8 w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center justify-center text-white active:scale-90 transition-all z-50 group">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-y-0.5 transition-transform">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+        </button>
+
+</div>
+
+<div id="modal-overlay" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] hidden opacity-0 transition-opacity duration-300">
+    
+    <div id="modal-content" class="absolute bottom-0 left-0 right-0 glass border-t border-white/10 rounded-t-[3rem] p-8 transform translate-y-full transition-transform duration-500 max-h-[95vh] overflow-y-auto no-scrollbar">
+        
+        <div class="flex justify-between items-center mb-8">
+            <h2 id="modal-title" class="text-xl font-black italic uppercase tracking-tighter text-white">Neue Fahrt</h2>
+            <button onclick="ui.closeModal()" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40">✕</button>
+        </div>
+
+        <div class="mb-8">
+            <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-4 ml-2">Verkehrsmittel</p>
+            <div class="grid grid-cols-4 gap-2">
+                <button data-id="walk" class="main-btn selectable-btn p-4 rounded-2xl glass border border-white/5 flex justify-center transition-all text-xl">🚶</button>
+                <button data-id="pt" class="main-btn selectable-btn p-4 rounded-2xl glass border border-white/5 flex justify-center transition-all text-xl">🚌</button>
+                <button data-id="car" class="main-btn selectable-btn p-4 rounded-2xl glass border border-white/5 flex justify-center transition-all text-xl">🚗</button>
+                <button data-id="alt" class="main-btn selectable-btn p-4 rounded-2xl glass border border-white/5 flex justify-center transition-all text-xl">🛴</button>
+            </div>
+        </div>
+
+        <div id="sub-type-section" class="mb-8 hidden">
+            <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-4 ml-2">Antrieb / Kategorie</p>
+            <div id="sub-type-grid" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <div id="car-extra-fields" class="hidden space-y-8 mb-8">
+            <div>
+                <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-4 ml-2">Straßentyp</p>
+                <div class="flex flex-wrap gap-2">
+                    <button data-group="road" data-id="stadt" class="selectable-btn px-5 py-3 rounded-2xl glass border border-white/5 text-[10px] font-black uppercase transition-all">Stadt</button>
+                    <button data-group="road" data-id="land" class="selectable-btn px-5 py-3 rounded-2xl glass border border-white/5 text-[10px] font-black uppercase transition-all">Land</button>
+                    <button data-group="road" data-id="autobahn" class="selectable-btn px-5 py-3 rounded-2xl glass border border-white/5 text-[10px] font-black uppercase transition-all">Autobahn</button>
+                </div>
+            </div>
+            <div>
+                <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-4 ml-2">Öffis möglich?</p>
+                <div class="flex gap-2">
+                    <button data-group="altPossible" data-id="true" class="selectable-btn px-6 py-3 rounded-2xl glass border border-white/5 text-[10px] font-black uppercase transition-all">✅ Ja</button>
+                    <button data-group="altPossible" data-id="false" class="selectable-btn px-6 py-3 rounded-2xl glass border border-white/5 text-[10px] font-black uppercase transition-all">❌ Nein</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-4 ml-2">Zweck</p>
+            <div class="flex flex-wrap gap-2">
+                <button data-group="purpose" data-id="arbeit" class="selectable-btn px-5 py-3 rounded-2xl glass border border-white/5 text-[10px] font-black uppercase transition-all">Arbeit</button>
+                <button data-group="purpose" data-id="freizeit" class="selectable-btn px-5 py-3 rounded-2xl glass border border-white/5 text-[10px] font-black uppercase transition-all">Freizeit</button>
+                <button data-group="purpose" data-id="einkauf" class="selectable-btn px-5 py-3 rounded-2xl glass border border-white/5 text-[10px] font-black uppercase transition-all">Einkauf</button>
+                <button data-group="purpose" data-id="sonstiges" class="selectable-btn px-5 py-3 rounded-2xl glass border border-white/5 text-[10px] font-black uppercase transition-all">Sonstiges</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div>
+                <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 ml-2">Distanz (km)</p>
+                <input type="number" id="in-dist" step="0.1" placeholder="0.0" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-xl font-bold text-white focus:border-[#00ff9f] transition-all">
+            </div>
+            <div>
+                <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-2 ml-2">Zeit (min)</p>
+                <input type="number" id="in-time" placeholder="0" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-xl font-bold text-white focus:border-[#00ff9f] transition-all">
+            </div>
+        </div>
+
+        <div class="mb-10">
+            <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 mb-4 ml-2">Datum</p>
+            <input type="date" id="in-date" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm font-bold text-white uppercase focus:border-[#00ff9f]">
+        </div>
+
+        <div class="mt-10 space-y-3">
+            <button id="btn-save" disabled 
+                    onclick="logic.saveEntry()" 
+                    class="w-full py-5 bg-[#00ff9f] text-[#0f172a] rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-[0_10px_30px_rgba(0,255,159,0.2)] transition-all disabled:opacity-20 disabled:grayscale disabled:cursor-not-allowed">
+                Fahrt Speichern
+            </button>
+        
+            <button id="btn-delete" 
+                    onclick="logic.askDelete()" 
+                    class="hidden w-full py-5 bg-white/5 text-red-500 border border-red-500/20 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all hover:bg-red-500/10 active:scale-95">
+                Eintrag löschen
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="confirm-overlay" onclick="closeConfirmDialog(false)" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-6">
+    <div id="confirm-box" onclick="event.stopPropagation()" class="glass max-w-xs w-full rounded-[2.5rem] p-8 border border-white/10 transform scale-90 transition-transform duration-300 text-center">
+        <div class="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">🗑️</div>
+        <h3 class="text-white font-black uppercase tracking-tighter mb-2">Eintrag löschen?</h3>
+        <p class="text-white/40 text-[11px] leading-relaxed mb-8">Bist du sicher? Diese Aktion kann nicht rückgängig gemacht werden.</p>
+        
+        <div class="space-y-3">
+            <button onclick="closeConfirmDialog(true)" class="w-full py-4 bg-red-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20">Löschen</button>
+            <button onclick="closeConfirmDialog(false)" class="w-full py-4 bg-white/5 text-white/60 rounded-2xl text-[10px] font-black uppercase tracking-widest">Abbrechen</button>
+        </div>
+    </div>
+</div>
+<script>
+let currentView = 'dist';
+let activeFilters = new Set(['all']);
+
+const app = {
+    isEditing: false,
+    editId: null,
+    activities: JSON.parse(localStorage.getItem('activities')) || []
+};
+
+const CONFIG = {
+    types: {
+        walk: { label: 'Zu Fuß / Fahrrad', color: '#00ff9f', text: 'black' },
+        pt: { label: 'Öffis', color: '#00b3ff', text: 'white' },
+        car: { label: 'Auto', color: '#ff0055', text: 'white' },
+        alt: { label: 'Alternative', color: '#f3ff00', text: 'black' }
+    },
+    subTypes: {
+        walk: { label: 'Zu Fuß / Fahrrad', rate: 0, co2: 0, parent: 'walk' },
+
+        bus: { label: 'Bus (Diesel)', rate: 0.40, co2: 87, parent: 'pt' },
+        tram: { label: 'Tram / U-Bahn', rate: 0.15, co2: 5, parent: 'pt' }, 
+        sbahn: { label: 'S-Bahn', rate: 0.19, co2: 38, parent: 'pt' },
+        re_e: { label: 'RE/RB (⚡)', rate: 0.19, co2: 35, parent: 'pt' },
+        re_d: { label: 'RE/RB (⛽)', rate: 0.35, co2: 90, parent: 'pt' },
+        ice: { label: 'ICE', rate: 0.058, co2: 25, parent: 'pt' },
+
+        benzin: { label: 'Benzin', rate: 0.65, co2: 180, parent: 'car' },
+        diesel: { label: 'Diesel', rate: 0.55, co2: 150, parent: 'car' },
+        hybrid: { label: 'Hybrid', rate: 0.45, co2: 110, parent: 'car' },
+        elektro: { label: 'Elektro', rate: 0.18, co2: 60, parent: 'car' },
+
+        escooter: { label: 'E-Scooter', rate: 0.035, co2: 12, parent: 'alt' },
+        moped: { label: 'Moped (Benzin)', rate: 0.25, co2: 70, parent: 'alt' },
+        ebike: { label: 'E-Bike', rate: 0.01, co2: 3, parent: 'alt' }
+    }
+};
+
+const ROAD_FACTORS = {
+    stadt: 1.0,
+    land: 0.8,
+    autobahn: 1.2
+};
+
+let activities = JSON.parse(localStorage.getItem('activities')) || [];
+let currentEntry = { type: null, sub: null, road: null, altPossible: null, purpose: null };
+
+const ui = {
+openModal(entryId = null) {
+    const modal = document.getElementById('modal-overlay');
+    const content = document.getElementById('modal-content');
+    const title = document.getElementById('modal-title');
+    const deleteBtn = document.getElementById('delete-btn');
+    
+    if (entryId) {
+        isEditing = true;
+        editId = entryId;
+        const entry = activities.find(a => a.id === entryId);
+        title.innerText = "Fahrt bearbeiten";
+        
+        if (deleteBtn) deleteBtn.classList.remove('hidden');
+    } else {
+        isEditing = false;
+        editId = null;
+        this.resetModal();
+        title.innerText = "Neue Fahrt";
+
+        if (deleteBtn) deleteBtn.classList.add('hidden');
+    }
+
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.add('opacity-100');
+        content.classList.remove('translate-y-full');
+    }, 10);
+},
+
+    closeModal() {
+        const modal = document.getElementById('modal-overlay');
+        const content = document.getElementById('modal-content');
+        
+        modal.classList.remove('opacity-100');
+        content.classList.add('translate-y-full');
+        setTimeout(() => modal.classList.add('hidden'), 500);
+    },
+
+    resetModal() {
+        currentEntry = { 
+            type: null, sub: null, road: null, altPossible: null, purpose: null,
+            date: new Date().toISOString().split('T')[0] 
+        };
+        
+        document.getElementById('in-dist').value = '';
+        document.getElementById('in-time').value = '';
+        document.getElementById('in-date').value = currentEntry.date;
+        
+        document.querySelectorAll('.selectable-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('sub-type-section').classList.add('hidden');
+        document.getElementById('car-extra-fields').classList.add('hidden');
+        
+        logic.validate();
+    },
+
+    selectMain(type) {
+    currentEntry.type = type;
+    
+    currentEntry.sub = (type === 'walk') ? 'walk_bike' : null;
+    currentEntry.road = null;
+    currentEntry.altPossible = null;
+
+    document.querySelectorAll('.main-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.id === type);
+    });
+
+    const carFields = document.getElementById('car-extra-fields');
+    if (type === 'car') {
+        carFields.classList.remove('hidden');
+    } else {
+        carFields.classList.add('hidden');
+        document.querySelectorAll('[data-group="road"], [data-group="altPossible"]').forEach(b => b.classList.remove('active'));
+    }
+
+    this.renderSubTypes(type);
+    logic.validate();
+    },
+
+    renderSubTypes(type) {
+        const grid = document.getElementById('sub-type-grid');
+        const section = document.getElementById('sub-type-section');
+        
+        const subs = Object.entries(CONFIG.subTypes).filter(([id, data]) => data.parent === type);
+
+        if (subs.length > 0) {
+            section.classList.remove('hidden');
+            grid.innerHTML = subs.map(([id, data]) => `
+                <button data-id="${id}" class="sub-btn selectable-btn px-5 py-3 rounded-2xl glass border border-white/5 text-[10px] font-black uppercase transition-all">
+                    ${data.label}
+                </button>
+            `).join('');
+
+            grid.querySelectorAll('.sub-btn').forEach(btn => {
+                btn.onclick = () => this.selectSub(btn.dataset.id);
+            });
+        } else {
+            section.classList.add('hidden');
+            currentEntry.sub = 'standard';
+        }
+    },
+
+    selectSub(subId) {
+        currentEntry.sub = subId;
+        document.querySelectorAll('.sub-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.id === subId);
+        });
+        logic.validate();
+    },
+
+    initListeners() {
+        document.querySelectorAll('[data-group]').forEach(btn => {
+            btn.onclick = () => {
+                const group = btn.dataset.group;
+                const val = btn.dataset.id;
+
+                if (group === 'altPossible') {
+                    currentEntry.altPossible = (val === 'true'); 
+                } else {
+                    currentEntry[group] = val;
+                }
+            
+                document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                logic.validate();
+            };
+        });
+
+        document.getElementById('in-dist').addEventListener('input', () => logic.validate());
+        document.getElementById('in-time').addEventListener('input', () => logic.validate());
+    },
+
+editEntry(id) {
+    const entry = activities.find(a => a.id === id);
+    if (!entry) return;
+
+    isEditing = true;
+    editId = id;
+
+    this.openModal(id);
+
+    document.getElementById('in-dist').value = entry.dist;
+    document.getElementById('in-time').value = entry.time;
+    document.getElementById('in-date').value = entry.date;
+
+    this.selectMain(entry.type);
+
+    if (entry.sub) {
+        document.querySelectorAll('.sub-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.id === entry.sub);
+        });
+    }
+
+    if (entry.purpose) {
+        document.querySelectorAll('[data-group="purpose"]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.id === entry.purpose);
+        });
+    }
+
+    const roadValue = entry.road || 'stadt';
+    document.querySelectorAll('[data-group="road"]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.id === roadValue);
+    });
+
+    if (entry.type === 'car') {
+        document.querySelectorAll('[data-group="altPossible"]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.id === String(entry.altPossible));
+        });
+    }
+
+    currentEntry = JSON.parse(JSON.stringify(entry)); 
+
+    const deleteBtn = document.getElementById('btn-delete');
+    if (deleteBtn) deleteBtn.classList.remove('hidden');
+
+    logic.validate();
+},
+
+exportToCSV() {
+    if (activities.length === 0) {
+        alert("Keine Daten zum Exportieren vorhanden.");
+        return;
+    }
+
+    const headers = ["Datum", "Typ", "Kategorie", "Distanz (km)", "Zeit (min)", "Energie (kWh)", "CO2 (kg)", "Zweck", "Weg-Typ"];
+    
+    const rows = activities.map(item => [
+        item.date,
+        item.type,
+        item.sub || 'Standard',
+        item.dist.toFixed(2),
+        item.time,
+        (item.energy || 0).toFixed(2),
+        (item.co2 || 0).toFixed(2),
+        item.purpose || '-',
+        item.road || 'stadt'
+    ]);
+
+    const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(";")).join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `CarbonTracker_Export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+};
+
+const logic = {
+    init() {
+        const content = document.getElementById('modal-content');
+            if (!content) return;
+
+            content.addEventListener('click', (e) => {
+                const btn = e.target.closest('.selectable-btn');
+                if (!btn) return;
+            
+                if (btn.classList.contains('main-btn')) {
+                    ui.selectMain(btn.dataset.id);
+                } 
+                else if (btn.dataset.group) {
+                    const group = btn.dataset.group;
+                    currentEntry[group] = (btn.dataset.id === 'true' || btn.dataset.id === 'false') 
+                        ? (btn.dataset.id === 'true') 
+                        : btn.dataset.id;
+                
+                    document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                }
+                else if (btn.classList.contains('sub-btn')) {
+                    ui.selectSub(btn.dataset.id);
+                }
+            
+                this.validate();
+            });
+
+            const inputs = ['in-dist', 'in-time', 'in-date'];
+            inputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', () => this.validate());
+                    el.addEventListener('blur', () => this.validate());
+                }
+            });
+
+        document.getElementById('modal-overlay').addEventListener('click', function(e) {
+
+            if (e.target === this) {
+                ui.closeModal();
+            }
+        });
+
+        const filterContainer = document.querySelector('nav .flex');
+        if (filterContainer) {
+            filterContainer.addEventListener('click', (e) => {
+                const btn = e.target.closest('.filter-btn');
+                if (btn) {
+                    this.toggleFilter(btn.dataset.id);
+                }
+            });
+        }
+
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.add('opacity-40'));
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.remove('opacity-40');
+                btn.classList.add('active');
+            
+                currentView = btn.dataset.view;
+                charts.update();
+            };
+        });
+    },
+
+    saveEntry() {
+        const distInput = document.getElementById('in-dist');
+        const timeInput = document.getElementById('in-time');
+        const dateInput = document.getElementById('in-date');
+
+        if (!distInput || !timeInput || !dateInput) return;
+
+        const distValue = parseFloat(distInput.value) || 0;
+        const timeValue = parseInt(timeInput.value) || 0;
+        const dateValue = dateInput.value;
+
+        const selectedRoad = currentEntry.road || 'stadt'; 
+
+        const multiplier = ROAD_FACTORS[selectedRoad] || 1.0;
+
+        const effectiveDist = distValue * multiplier;
+
+        const configSub = CONFIG.subTypes[currentEntry.sub];
+
+        const energyRate = configSub?.rate || 0;
+        const co2Rate = configSub?.co2 || 0;     
+
+        const entryData = {
+            ...currentEntry,
+            dist: distValue,
+            time: timeValue,
+            date: dateValue,
+            energy: effectiveDist * energyRate,
+            co2: (effectiveDist * co2Rate) / 1000,
+            road: selectedRoad
+        };
+
+        if (isEditing) {
+            const index = activities.findIndex(a => a.id === editId);
+            if (index !== -1) {
+                activities[index] = { ...activities[index], ...entryData };
+            }
+        } else {
+            activities.push({ ...entryData, id: Date.now() });
+        }
+
+        activities.sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+
+        localStorage.setItem('activities', JSON.stringify(activities));
+
+        render.activitiesList();
+        charts.update();
+        ui.closeModal();
+
+        isEditing = false;
+        editId = null;
+    },
+
+    validate() {
+        const saveBtn = document.getElementById('btn-save');
+        if (!saveBtn) return;
+        const activeMain = document.querySelector('.main-btn.active')?.dataset.id;
+        const activeSub = document.querySelector('.sub-btn.active')?.dataset.id;
+        const activePurpose = document.querySelector('[data-group="purpose"].active')?.dataset.id;
+        const distValue = parseFloat(document.getElementById('in-dist').value);
+        const timeValue = parseInt(document.getElementById('in-time').value);
+        const hasType = !!activeMain;
+        const hasPurpose = !!activePurpose;
+        const hasDist = !isNaN(distValue) && distValue > 0;
+        const hasTime = !isNaN(timeValue) && timeValue > 0;
+        const hasSub = (activeMain === 'walk') ? true : !!activeSub;
+        let isValid = hasType && hasSub && hasPurpose && hasDist && hasTime;
+        if (activeMain === 'car') {
+            const hasRoad = !!document.querySelector('[data-group="road"].active');
+            const hasAlt = !!document.querySelector('[data-group="altPossible"].active');
+            isValid = isValid && hasRoad && hasAlt;
+        }
+    
+        saveBtn.disabled = !isValid;
+    
+        console.log("Validation Check:", { hasType, hasSub, hasPurpose, hasDist, hasTime, isValid });
+    },
+
+    deleteEntry() {
+        activities = activities.filter(a => a.id !== editId);
+        localStorage.setItem('activities', JSON.stringify(activities));
+        
+        render.activitiesList();
+        charts.update();
+        ui.closeModal();
+    },
+
+    askDelete() {
+        const overlay = document.getElementById('confirm-overlay');
+        const box = document.getElementById('confirm-box');
+        
+        if (!overlay || !box) return console.error("Confirm elements not found");
+
+        overlay.classList.remove('hidden');
+        setTimeout(() => {
+            overlay.classList.add('opacity-100');
+            box.style.transform = "scale(1)";
+        }, 10);
+    },
+
+    toggleFilter(id) {
+        if (id === 'all') {
+            activeFilters.clear();
+            activeFilters.add('all');
+        } else {
+            activeFilters.delete('all');
+            if (activeFilters.has(id)) {
+                activeFilters.delete(id);
+                if (activeFilters.size === 0) activeFilters.add('all');
+            } else {
+                activeFilters.add(id);
+            }
+        }
+
+        this.updateFilterUI();
+        render.activitiesList();
+        charts.update();
+    },
+
+    updateFilterUI() {
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            const id = btn.dataset.id;
+            const isActive = activeFilters.has(id);
+
+            if (isActive) {
+                btn.classList.add('active');
+                if (id === 'all') {
+                    btn.style.backgroundColor = '#ffffff';
+                    btn.style.color = '#0f172a';
+                } else {
+                    btn.style.backgroundColor = CONFIG.types[id].color;
+                    btn.style.color = CONFIG.types[id].text;
+                    btn.style.borderColor = 'transparent';
+                }
+            } else {
+                btn.classList.remove('active');
+                btn.style.backgroundColor = '';
+                btn.style.color = '';
+                btn.style.borderColor = '';
+            }
+        });
+    }
+};
+
+const render = {
+activitiesList() {
+    const container = document.getElementById('activities-list');
+    if (!container) return;
+
+    const filtered = activeFilters.has('all') 
+        ? activities 
+        : activities.filter(item => activeFilters.has(item.type));
+
+    if (filtered.length === 0) {
+        const message = activities.length === 0 
+            ? "Keine Fahrten gefunden" 
+            : "Keine Einträge für diesen Filter";
+            
+        container.innerHTML = `
+            <div id="empty-state" class="py-20 text-center opacity-20">
+                <p class="text-xs font-bold uppercase tracking-widest">${message}</p>
+            </div>`;
+        return;
+    }
+
+    const sortedActivities = [...filtered].sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        if (dateB - dateA !== 0) return dateB - dateA;
+        return b.id - a.id;
+    });
+
+    let lastDate = "";
+    let html = "";
+
+    sortedActivities.forEach(item => {
+        if (item.date !== lastDate) {
+            html += `
+                <div class="mb-4 ml-2">
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] opacity-30 border-l-2 border-white/10 pl-3">
+                        ${this.formatDate(item.date)}
+                    </span>
+                </div>`;
+            lastDate = item.date;
+        }
+
+        const typeConfig = CONFIG.types[item.type];
+        const subLabel = CONFIG.subTypes[item.sub]?.label || 'Standard';
+
+        let displayTitle = item.type === 'car' ? `Auto (${subLabel})` : subLabel;
+        if (item.type === 'walk') displayTitle = 'Zu Fuß / Fahrrad';
+
+        html += `
+            <div onclick="ui.editEntry(${item.id})" class="glass rounded-[2rem] overflow-hidden mb-4 cursor-pointer active:scale-[0.98] transition-all border border-white/5 shadow-lg">
+                <div style="background-color: ${typeConfig.color}; color: ${typeConfig.text}" class="px-5 py-2.5 text-center">
+                    <p class="text-[10px] font-black uppercase tracking-[0.15em]">${displayTitle}</p>
+                </div>
+                
+                <div class="p-5 flex flex-col gap-4">
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-bold text-white/70">
+                            ${item.dist.toFixed(1)} km
+                        </span>
+                        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-bold text-white/70">
+                            ${item.time} min
+                        </span>
+                        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-bold text-white/70 capitalize">
+                            ${item.purpose || 'Sonstiges'}
+                        </span>
+                        ${item.altPossible === true || item.altPossible === 'true' ? '<span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px]">✅ Alt</span>' : ''}
+                    </div>
+
+                    <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[#00ff9f] text-sm">⚡</span>
+                            <span class="text-[11px] font-black text-[#00ff9f]">
+                                ${item.energy.toFixed(2)} <span class="text-[7px] opacity-60 ml-0.5">kWh</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-white/60 text-sm">☁️</span>
+                                <span class="text-[11px] font-black text-white opacity-80">
+                                    ${item.co2.toFixed(2)} <span class="text-[7px] opacity-60 ml-0.5">kg CO₂</span>
+                                </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    if (this.updateStats) this.updateStats();
+},
+
+    formatDate(dateStr) {
+        const options = { weekday: 'short', day: '2-digit', month: 'short' };
+        return new Date(dateStr).toLocaleDateString('de-DE', options);
+    },
+
+    updateStats() {
+        const totalDist = activities.reduce((sum, a) => sum + a.dist, 0);
+        document.getElementById('total-dist').innerText = totalDist.toFixed(1);
+
+        if (window.chart) {
+            const data = [0, 0, 0, 0];
+            activities.forEach(a => {
+                if (a.type === 'walk') data[0] += a.dist;
+                else if (a.type === 'pt') data[1] += a.dist;
+                else if (a.type === 'car') data[2] += a.dist;
+                else if (a.type === 'alt') data[3] += a.dist;
+            });
+            chart.data.datasets[0].data = data;
+            chart.update();
+        }
+    }
+};
+
+let myChart = null;
+
+const charts = {
+    init() {
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        
+        myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Walk', 'Public', 'Car', 'Alt'],
+                datasets: [{
+                    data: [0, 0, 0, 0],
+                    backgroundColor: [
+                        CONFIG.types.walk.color,
+                        CONFIG.types.pt.color,
+                        CONFIG.types.car.color,
+                        CONFIG.types.alt.color
+                    ],
+                    borderWidth: 0,
+                    borderRadius: 10,
+                    spacing: 0,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                cutout: '82%',
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: 25 },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
+                },
+                onClick: (evt, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const label = myChart.data.labels[index];
+                        const value = myChart.data.datasets[0].data[index];
+                        this.showSegmentStats(label, value);
+                    } else {
+                        this.resetCenterText();
+                    }
+                }
+            }
+        });
+        this.update();
+    },
+
+    update() {
+        if (!myChart) return;
+
+        const totals = { walk: 0, pt: 0, car: 0, alt: 0 };
+
+        const filteredForChart = activeFilters.has('all') 
+            ? activities 
+            : activities.filter(item => activeFilters.has(item.type));
+
+        filteredForChart.forEach(item => {
+            if (totals[item.type] !== undefined) {
+                const value = item[currentView] || 0;
+                totals[item.type] += value;
+            }
+        });
+
+        const dataValues = [totals.walk, totals.pt, totals.car, totals.alt];
+
+        const activeSegments = dataValues.filter(v => v > 0).length;
+        myChart.data.datasets[0].spacing = activeSegments > 1 ? 10 : 0;
+        myChart.data.datasets[0].data = dataValues;
+
+        myChart.update();
+
+        const currentTotal = dataValues.reduce((a, b) => a + b, 0);
+        this.resetCenterText(currentTotal); 
+    },
+
+    showSegmentStats(label, value) {
+        const distEl = document.getElementById('total-dist');
+        const labelEl = document.querySelector('#total-dist + span');
+
+        const labelMap = {
+            'Walk': 'walk',
+            'Public': 'pt',
+            'Car': 'car',
+            'Alt': 'alt'
+        };
+
+        const typeKey = labelMap[label];
+        const typeConfig = CONFIG.types[typeKey];
+
+        distEl.innerText = value.toFixed(1);
+
+        const translations = {
+            'walk': 'Zu Fuß',
+            'pt': 'ÖPNV',
+            'car': 'Auto',
+            'alt': 'Alternativ'
+        };
+
+        labelEl.innerText = translations[typeKey].toUpperCase();
+
+        labelEl.style.color = typeConfig.color;
+    },
+
+    resetCenterText(providedSum) {
+        const totalSum = providedSum !== undefined 
+            ? providedSum 
+            : activities.reduce((a, b) => a + (b[currentView] || 0), 0);
+
+        const distEl = document.getElementById('total-dist');
+        const labelEl = document.querySelector('#total-dist + span');
+
+        const viewConfig = {
+            dist: { unit: "KM", label: "GESAMT" },
+            energy: { unit: "KWH", label: "ENERGIE" },
+            co2: { unit: "KG", label: "CO₂" }
+        };
+
+        const config = viewConfig[currentView] || viewConfig.dist;
+
+        if (distEl) {
+            distEl.innerText = totalSum > 100 ? totalSum.toFixed(1) : totalSum.toFixed(2);
+            distEl.style.color = "white";
+        }
+
+        if (labelEl) {
+            const filterStatus = activeFilters.has('all') ? config.label : "GEFILTERT";
+            labelEl.innerText = `${filterStatus} ${config.unit}`;
+            labelEl.style.color = "#00ff9f";
+        }
+    }
+};
+
+window.askDeleteDialog = function() {
+    ui.askDelete();
+};
+
+window.closeConfirmDialog = function(confirmed) {
+    if (typeof ui.closeConfirm === 'function') {
+        ui.closeConfirm(confirmed);
+    } else {
+        const overlay = document.getElementById('confirm-overlay');
+        const box = document.getElementById('confirm-box');
+        overlay.classList.remove('opacity-100');
+        box.style.transform = "scale(0.9)";
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            if (confirmed) logic.deleteEntry();
+        }, 300);
+    }
+};
+
+window.onload = () => {
+    logic.init();
+    charts.init();
+    render.activitiesList();
+};
+</script>
+</body>
+</html>

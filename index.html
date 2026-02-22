@@ -55,40 +55,47 @@
 <body class="min-h-screen pb-20">
 <div id="app" class="max-w-md mx-auto relative">
 
-        <header class="p-6 pb-0">
-            <div class="flex justify-between items-end mb-8">
-                <div>
-                    <h1 class="text-3xl font-black italic tracking-tighter italic leading-none"><span class="text-[#00ff9f]">GREEN</span><span class="text-white">TRACE</span></h1>
-                </div>
+    <header class="p-6 pb-0">
+        <div class="flex justify-between items-end mb-8">
+            <div>
+                <h1 class="text-3xl font-black italic tracking-tighter italic leading-none"><span class="text-[#00ff9f]">GREEN</span><span class="text-white">TRACE</span></h1>
             </div>
+        </div>
+    </header>
 
-            <div class="flex gap-2 p-1 bg-white/5 rounded-2xl mb-6 border border-white/10">
+    <nav class="fixed top-14 left-1/2 -translate-x-1/2 z-[100] bg-white/5 backdrop-blur-lg border border-white/10 p-1 rounded-2xl shadow-2xl">
+        <div class="flex gap-1">
+            <button id="btn-mob" onclick="app.switchTab('mobility')" class="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-white text-black">Mobilität</button>
+            <button id="btn-cons" onclick="app.switchTab('consumption')" class="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-white/50">Konsum</button>
+        </div>
+    </nav>
+
+    <div id="view-mobility" class="block">
+        <div class="px-6 mb-6">
+            <div class="flex gap-2 p-1 bg-white/5 rounded-2xl mb-6 mt-14 border border-white/10">
                 <button data-view="dist" class="view-btn flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active">Distanz</button>
                 <button data-view="energy" class="view-btn flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all opacity-40">Energie</button>
                 <button data-view="co2" class="view-btn flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all opacity-40">CO₂</button>
             </div>
-
             <div class="glass rounded-[2.5rem] p-6 mb-8 border border-white/5 shadow-2xl relative">
                 <div class="relative h-[220px] w-full">
                     <canvas id="mainChart"></canvas>
-
                     <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                         <span id="total-dist" class="text-4xl font-black text-white leading-none">0.0</span>
                         <span class="text-[8px] font-bold text-[#00ff9f] uppercase tracking-[0.2em] mt-1">Gesamt KM</span>
                     </div>
                 </div>
             </div>
-        </header>
-
-        <nav class="px-6 mb-6">
-            <div class="flex gap-2 overflow-x-auto no-scrollbar py-2">
-                <button data-id="all" class="filter-btn selectable-btn active px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">Alle</button>
-                <button data-id="walk" class="filter-btn selectable-btn px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">Zu Fuss</button>
-                <button data-id="pt" class="filter-btn selectable-btn px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">ÖPNV</button>
-                <button data-id="car" class="filter-btn selectable-btn px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">Auto</button>
-                <button data-id="alt" class="filter-btn selectable-btn px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">Alternative</button>
-            </div>
-        </nav>
+            <nav class="px-6 mb-6">
+                <div class="flex gap-2 overflow-x-auto no-scrollbar py-2">
+                    <button data-id="all" class="filter-btn selectable-btn active px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">Alle</button>
+                    <button data-id="walk" class="filter-btn selectable-btn px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">Zu Fuss</button>
+                    <button data-id="pt" class="filter-btn selectable-btn px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">ÖPNV</button>
+                    <button data-id="car" class="filter-btn selectable-btn px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">Auto</button>
+                    <button data-id="alt" class="filter-btn selectable-btn px-5 py-2 rounded-full glass border border-white/10 text-[10px] font-black uppercase tracking-wider transition-all">Alternative</button>
+                </div>
+            </nav>
+        </div>
 
         <main id="activities-list" class="px-6 flex flex-col gap-4">
             <div id="empty-state" class="py-20 text-center opacity-20">
@@ -99,15 +106,44 @@
         <button onclick="ui.openModal()" class="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-2xl shadow-[0_10px_40px_rgba(255,255,255,0.2)] flex items-center justify-center text-black active:scale-90 active:rotate-90 transition-all z-50">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         </button>
+    </div>
 
-        <button onclick="ui.exportToCSV()" class="fixed bottom-8 left-8 w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center justify-center text-white active:scale-90 transition-all z-50 group">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-y-0.5 transition-transform">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-        </button>
+    <div id="view-consumption" class="hidden">
+        <div class="px-6 mb-6">
+            <div class="flex gap-2 p-1 bg-white/5 rounded-2xl mb-6 mt-14 border border-white/10">
+                <button onclick="consChart.switchMode('energy')" id="btn-mode-energy" class="cons-view-btn flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all">Energie</button>
+                <button onclick="consChart.switchMode('co2')" id="btn-mode-co2" class="cons-view-btn flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all opacity-40 text-white">CO₂</button>
+            </div>
+        
+            <div class="glass rounded-[2.5rem] p-6 mb-8 border border-white/5 shadow-2xl relative">
+                <div class="relative h-[220px] w-full">
+                    <canvas id="consChartCanvas"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span id="cons-total-value" class="text-4xl font-black text-white leading-none">0.0</span>
+                        <span id="cons-total-unit" class="text-[8px] font-bold text-[#00ff9f] uppercase tracking-[0.2em] mt-1 text-center">Gesamt kWh</span>
+                    </div>
+                </div>
+            </div>
+        
+            <div id="consumption-list" class="space-y-4">
+                <div class="p-8 border-2 border-dashed border-white/5 rounded-3xl text-center text-white/20">
+                    <p class="text-sm">Keine Berichte vorhanden.<br>Klicke auf +, um die erste Woche zu erfassen.</p>
+                </div>
+            </div>
+        
+            <button onclick="consUI.openModal()" class="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-2xl shadow-[0_10px_40px_rgba(255,255,255,0.2)] flex items-center justify-center text-black active:scale-90 transition-all z-50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+        </div>
+    </div>
 
+    <button onclick="ui.exportToExcel()" class="fixed bottom-8 left-8 w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center justify-center text-white active:scale-90 transition-all z-50 group">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-y-0.5 transition-transform">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+    </button>
 </div>
 
 <div id="modal-overlay" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] hidden opacity-0 transition-opacity duration-300">
@@ -206,6 +242,223 @@
         </div>
     </div>
 </div>
+
+<div id="cons-modal-overlay" onclick="consUI.handleOutsideClick(event)" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-[200] hidden opacity-0 transition-all duration-500 flex items-end sm:items-center justify-center">
+    <div id="cons-modal-content" class="bg-[#111] w-full max-w-xl rounded-t-[40px] sm:rounded-[40px] border border-white/10 p-8 transform translate-y-full transition-all duration-500 max-h-[90vh] overflow-y-auto">
+        
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h3 id="cons-modal-title" class="text-xl font-black uppercase italic">Neue Woche</h3>
+                <div class="flex gap-2 mb-10 px-1">
+                    <button onclick="consUI.goToStep(0)" id="step-dot-0" class="h-1 flex-1 rounded-full transition-all bg-[#00ff9f]"></button>
+                    <button onclick="consUI.goToStep(1)" id="step-dot-1" class="h-1 flex-1 rounded-full transition-all bg-white/10"></button>
+                    <button onclick="consUI.goToStep(2)" id="step-dot-2" class="h-1 flex-1 rounded-full transition-all bg-white/10"></button>
+                    <button onclick="consUI.goToStep(3)" id="step-dot-3" class="h-1 flex-1 rounded-full transition-all bg-white/10"></button>
+                </div>
+            </div>
+            <button onclick="consUI.closeModal()" class="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-white/50">✕</button>
+        </div>
+
+        <form id="cons-form">
+            <div id="cons-step-0" class="mb-8">
+                <label class="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-2">Kalenderwoche</label>
+                <input type="week" id="cons-week" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-white/30">
+            </div>
+
+        <div id="cons-step-1" class="space-y-10">
+
+            <div class="food-group" data-category="meat">
+                <div class="flex justify-between items-center mb-4">
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Fleisch & Wurst</label>
+                    <span id="val-meat" class="text-sm font-mono font-bold text-white">0 Tage</span>
+                </div>
+
+                <input type="range" id="in-meat-days" min="0" max="7" step="1" value="0" 
+                       oninput="document.getElementById('val-meat').innerText = this.value + ' Tage'"
+                       class="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white mb-6">
+
+                <div class="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/10" data-group="meat-origin">
+                    <button type="button" data-origin="local" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all">Lokal</button>
+                    <button type="button" data-origin="germany" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all active bg-white text-black">DE</button>
+                    <button type="button" data-origin="europe" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">EU</button>
+                    <button type="button" data-origin="world" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">Welt</button>
+                    <button type="button" data-origin="mix" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">Mix</button>
+                </div>
+            </div>
+        
+            <div class="food-group" data-category="dairy">
+                <div class="flex justify-between items-center mb-4">
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Milchprodukte</label>
+                    <span id="val-dairy" class="text-sm font-mono font-bold text-white">0 Tage</span>
+                </div>
+
+                <input type="range" id="in-dairy-days" min="0" max="7" step="1" value="0" 
+                       oninput="document.getElementById('val-dairy').innerText = this.value + ' Tage'"
+                       class="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white mb-6">
+
+                <div class="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/10" data-group="dairy-origin">
+                    <button type="button" data-origin="local" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all">Lokal</button>
+                    <button type="button" data-origin="germany" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all active bg-white text-black">DE</button>
+                    <button type="button" data-origin="europe" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">EU</button>
+                    <button type="button" data-origin="world" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">Welt</button>
+                    <button type="button" data-origin="mix" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">Mix</button>
+                </div>
+            </div>
+        
+            <div class="food-group" data-category="eggsFish">
+                <div class="flex justify-between items-center mb-4">
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Eier & Fisch</label>
+                    <span id="val-eggsFish" class="text-sm font-mono font-bold text-white">0 Tage</span>
+                </div>
+
+                <input type="range" id="in-eggsFish-days" min="0" max="7" step="1" value="0" 
+                       oninput="document.getElementById('val-eggsFish').innerText = this.value + ' Tage'"
+                       class="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white mb-6">
+
+                <div class="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/10" data-group="eggsFish-origin">
+                    <button type="button" data-origin="local" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all">Lokal</button>
+                    <button type="button" data-origin="germany" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all active bg-white text-black">DE</button>
+                    <button type="button" data-origin="europe" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">EU</button>
+                    <button type="button" data-origin="world" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">Welt</button>
+                    <button type="button" data-origin="mix" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">Mix</button>
+                </div>
+            </div>
+        
+            <div class="food-group" data-category="fruits">
+                <div class="flex justify-between items-center mb-4">
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Früchte & Gemüse</label>
+                    <span id="val-fruits" class="text-sm font-mono font-bold text-white">0 Tage</span>
+                </div>
+
+                <input type="range" id="in-fruits-days" min="0" max="7" step="1" value="0" 
+                       oninput="document.getElementById('val-fruits').innerText = this.value + ' Tage'"
+                       class="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white mb-6">
+
+                <div class="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/10" data-group="fruits-origin">
+                    <button type="button" data-origin="local" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all">Lokal</button>
+                    <button type="button" data-origin="germany" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all active bg-white text-black">DE</button>
+                    <button type="button" data-origin="europe" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">EU</button>
+                    <button type="button" data-origin="world" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">Welt</button>
+                    <button type="button" data-origin="mix" class="origin-btn flex-1 py-2 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">Mix</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="cons-step-2" class="hidden space-y-10">
+
+            <div class="resource-group">
+                <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 block mb-4 text-center">Stromverbrauch (kWh)</label>
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <span class="text-[8px] uppercase text-white/20 block mb-2 ml-2">Anfang Woche</span>
+                        <input type="number" id="in-elec-start" placeholder="0000" 
+                               class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-lg font-bold outline-none focus:border-white/30 transition-all">
+                    </div>
+                    <div class="flex-1">
+                        <span class="text-[8px] uppercase text-white/20 block mb-2 ml-2">Ende Woche</span>
+                        <input type="number" id="in-elec-end" placeholder="0000" 
+                               class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-lg font-bold outline-none focus:border-white/30 transition-all">
+                    </div>
+                </div>
+            </div>
+        
+            <div class="resource-group">
+                <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 block mb-4 text-center">Wasserverbrauch</label>
+                <div class="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/10" data-group="water-usage">
+                    <button type="button" data-val="low" class="origin-btn flex-1 py-3 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">Niedrig</button>
+                    <button type="button" data-val="mid" class="origin-btn flex-1 py-3 rounded-xl text-[8px] font-black uppercase transition-all active bg-white text-black">Mittel</button>
+                    <button type="button" data-val="high" class="origin-btn flex-1 py-3 rounded-xl text-[8px] font-black uppercase transition-all opacity-40">Hoch</button>
+                </div>
+            </div>
+        
+            <div class="resource-group">
+                <div class="mb-6">
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 block mb-3 ml-2">
+                        Heizdauer (Durchschnitt Std. pro Tag)
+                    </label>
+                    <input type="number" id="in-heat-hours" placeholder="0" step="0.5" min="0" max="24"
+                           class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-lg font-bold outline-none focus:border-white/30 transition-all text-white">
+                </div>
+            
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
+                            Thermostat-Stufe (Intensität)
+                        </label>
+                        <span id="val-heat-level" class="text-sm font-mono font-bold text-white bg-white/10 px-3 py-1 rounded-lg">
+                            0.0
+                        </span>
+                    </div>
+
+                    <input type="range" id="in-heat-level" min="0" max="5" step="0.1" value="0" 
+                           oninput="document.getElementById('val-heat-level').innerText = parseFloat(this.value).toFixed(1)"
+                           class="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white mb-3">
+                </div>
+            </div>
+        
+        </div>
+
+        <div id="cons-step-3" class="hidden space-y-8">
+
+            <div class="digital-group space-y-6">
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 block mb-2 ml-2">Musik (Spotify, Radio) — Std/Woche</label>
+                    <input type="number" id="in-stream-music" placeholder="0" 
+                           class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-bold outline-none focus:border-white/30">
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 block mb-2 ml-2">Video (YouTube, Netflix) — Std/Woche</label>
+                    <input type="number" id="in-stream-video" placeholder="0" 
+                           class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-bold outline-none focus:border-white/30">
+                </div>
+            
+                <div>
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 block mb-2 ml-2">Livestreams (Twitch) — Std/Woche</label>
+                    <input type="number" id="in-stream-live" placeholder="0" 
+                           class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-bold outline-none focus:border-white/30">
+                </div>
+            </div>
+        
+            <hr class="border-white/5">
+        
+            <div class="ai-group">
+                <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 block mb-2 ml-2">KI-Anfragen (ChatGPT, Gemini) — Anzahl</label>
+                <input type="number" id="in-ai-queries" placeholder="0" 
+                       class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-bold outline-none focus:border-white/30">
+            </div>
+        
+        </div>
+
+            <div class="flex gap-3 mt-8">
+                <button type="button" onclick="consUI.prev()" id="cons-prev-btn" class="hidden flex-1 py-5 bg-white/5 text-white/50 border border-white/10 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all hover:bg-white/10 active:scale-95">
+                    Zurück
+                </button>
+            
+                <button type="button" onclick="consUI.next()" id="cons-next-btn" class="flex-[2] py-5 bg-[#00ff9f] text-[#0f172a] rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-[0_10px_30px_rgba(0,255,159,0.3)] transition-all hover:brightness-110 active:scale-95 disabled:opacity-20 disabled:grayscale disabled:cursor-not-allowed">
+                    Weiter
+                </button>
+            </div>
+
+        <button id="cons-btn-delete" type="button"onclick="event.preventDefault(); event.stopPropagation(); consUI.deleteEntry(app.editId)" class="hidden w-full py-5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all hover:bg-red-500/20 active:scale-95 mt-6">
+            Eintrag löschen
+        </button>
+        </form>
+    </div>
+</div>
+
+<div id="cons-confirm-overlay" onclick="consUI.closeConfirm(false)" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-6">
+    <div id="cons-confirm-box" onclick="event.stopPropagation()" class="glass max-w-xs w-full rounded-[2.5rem] p-8 border border-white/10 transform scale-90 transition-transform duration-300 text-center">
+        <div class="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">🗑️</div>
+        <h3 class="text-white font-black uppercase tracking-tighter mb-2">Bericht löschen?</h3>
+        <p class="text-white/40 text-[11px] leading-relaxed mb-8">Bist du sicher? Diese Aktion kann nicht rückgängig gemacht werden.</p>
+        
+        <div class="space-y-3">
+            <button onclick="consUI.closeConfirm(true)" class="w-full py-4 bg-red-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20">Löschen</button>
+            <button onclick="consUI.closeConfirm(false)" class="w-full py-4 bg-white/5 text-white/60 rounded-2xl text-[10px] font-black uppercase tracking-widest">Abbrechen</button>
+        </div>
+    </div>
+</div>
 <script>
 let currentView = 'dist';
 let activeFilters = new Set(['all']);
@@ -213,7 +466,42 @@ let activeFilters = new Set(['all']);
 const app = {
     isEditing: false,
     editId: null,
-    activities: JSON.parse(localStorage.getItem('activities')) || []
+    activities: JSON.parse(localStorage.getItem('activities')) || [],
+    consumption: JSON.parse(localStorage.getItem('consumption')) || [],
+    currentTab: 'mobility',
+
+    switchTab(tab) {
+        this.currentTab = tab;
+
+        const mobView = document.getElementById('view-mobility');
+        const consView = document.getElementById('view-consumption');
+        const mobBtn = document.getElementById('btn-mob');
+        const consBtn = document.getElementById('btn-cons');
+
+        if (tab === 'mobility') {
+            mobView.classList.remove('hidden');
+            consView.classList.add('hidden');
+            
+            mobBtn.classList.add('bg-white', 'text-black');
+            mobBtn.classList.remove('text-white/50');
+            consBtn.classList.remove('bg-white', 'text-black');
+            consBtn.classList.add('text-white/50');
+            
+            if (typeof charts !== 'undefined') charts.update();
+        } else {
+            mobView.classList.add('hidden');
+            consView.classList.remove('hidden');
+            consBtn.classList.add('bg-white', 'text-black');
+            consBtn.classList.remove('text-white/50');
+            mobBtn.classList.remove('bg-white', 'text-black');
+            mobBtn.classList.add('text-white/50');
+            if (tab === 'consumption') {
+                setTimeout(() => {
+                    consChart.init(); 
+                }, 100);
+            }
+        }
+    }
 };
 
 const CONFIG = {
@@ -254,42 +542,49 @@ let activities = JSON.parse(localStorage.getItem('activities')) || [];
 let currentEntry = { type: null, sub: null, road: null, altPossible: null, purpose: null };
 
 const ui = {
-openModal(entryId = null) {
-    const modal = document.getElementById('modal-overlay');
-    const content = document.getElementById('modal-content');
-    const title = document.getElementById('modal-title');
-    const deleteBtn = document.getElementById('delete-btn');
-    
-    if (entryId) {
-        isEditing = true;
-        editId = entryId;
-        const entry = activities.find(a => a.id === entryId);
-        title.innerText = "Fahrt bearbeiten";
-        
-        if (deleteBtn) deleteBtn.classList.remove('hidden');
-    } else {
-        isEditing = false;
-        editId = null;
-        this.resetModal();
-        title.innerText = "Neue Fahrt";
+    openModal(entryId = null) {
+        const modal = document.getElementById('modal-overlay');
+        const content = document.getElementById('modal-content');
+        const title = document.getElementById('modal-title');
+        const deleteBtn = document.getElementById('btn-delete');
 
-        if (deleteBtn) deleteBtn.classList.add('hidden');
-    }
+        if (entryId) {
+            app.isEditing = true;
+            app.editId = entryId;
+            const entry = app.activities.find(a => a.id === entryId);
+            title.innerText = "Fahrt bearbeiten";
 
-    modal.classList.remove('hidden');
-    setTimeout(() => {
-        modal.classList.add('opacity-100');
-        content.classList.remove('translate-y-full');
-    }, 10);
-},
+            if (deleteBtn) deleteBtn.classList.remove('hidden');
+        } else {
+            app.isEditing = false;
+            app.editId = null;
+            this.resetModal();
+            title.innerText = "Neue Fahrt";
+
+            if (deleteBtn) deleteBtn.classList.add('hidden');
+        }
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.add('opacity-100');
+            content.classList.remove('translate-y-full');
+        }, 10);
+    },
 
     closeModal() {
         const modal = document.getElementById('modal-overlay');
         const content = document.getElementById('modal-content');
-        
+
         modal.classList.remove('opacity-100');
         content.classList.add('translate-y-full');
-        setTimeout(() => modal.classList.add('hidden'), 500);
+    
+        app.isEditing = false;
+        app.editId = null;
+
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            this.resetModal();
+        }, 500);
     },
 
     resetModal() {
@@ -297,15 +592,21 @@ openModal(entryId = null) {
             type: null, sub: null, road: null, altPossible: null, purpose: null,
             date: new Date().toISOString().split('T')[0] 
         };
-        
+
         document.getElementById('in-dist').value = '';
         document.getElementById('in-time').value = '';
         document.getElementById('in-date').value = currentEntry.date;
         
-        document.querySelectorAll('.selectable-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.selectable-btn, .sub-btn, .view-btn').forEach(b => {
+            b.classList.remove('active');
+        });
+
         document.getElementById('sub-type-section').classList.add('hidden');
         document.getElementById('car-extra-fields').classList.add('hidden');
-        
+
+        const deleteBtn = document.getElementById('btn-delete');
+        if (deleteBtn) deleteBtn.classList.add('hidden');
+
         logic.validate();
     },
 
@@ -431,39 +732,86 @@ editEntry(id) {
     logic.validate();
 },
 
-exportToCSV() {
-    if (activities.length === 0) {
+exportToExcel() {
+    const mobilityData = app.mobility || activities || [];
+    const consumptionData = app.consumption || [];
+
+    if (mobilityData.length === 0 && consumptionData.length === 0) {
         alert("Keine Daten zum Exportieren vorhanden.");
         return;
     }
 
-    const headers = ["Datum", "Typ", "Kategorie", "Distanz (km)", "Zeit (min)", "Energie (kWh)", "CO2 (kg)", "Zweck", "Weg-Typ"];
+    const createRow = (cells) => {
+        return '<Row>' + cells.map(cell => {
+            const type = typeof cell === 'number' ? 'Number' : 'String';
+            return `<Cell><Data ss:Type="${type}">${cell}</Data></Cell>`;
+        }).join('') + '</Row>';
+    };
+
+    const mobilityHeaders = ["Datum", "Typ", "Kategorie", "KM", "Minuten", "kWh", "kg CO2"];
+    let mobilityRows = createRow(mobilityHeaders);
     
-    const rows = activities.map(item => [
-        item.date,
-        item.type,
-        item.sub || 'Standard',
-        item.dist.toFixed(2),
-        item.time,
-        (item.energy || 0).toFixed(2),
-        (item.co2 || 0).toFixed(2),
-        item.purpose || '-',
-        item.road || 'stadt'
-    ]);
+    mobilityData.forEach(item => {
+        mobilityRows += createRow([
+            item.date || '-',
+            item.type || '-',
+            item.sub || 'Standard',
+            item.dist || 0,
+            item.time || 0,
+            Number((item.energy || 0).toFixed(2)),
+            Number((item.co2 || 0).toFixed(2))
+        ]);
+    });
 
-    const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(";")).join("\n");
+    const consHeaders = ["Woche", "Sektion", "Energie (kWh)", "CO2 (kg)"];
+    let consRows = createRow(consHeaders);
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    consumptionData.forEach(entry => {
+        const f = entry.details.food;
+        const res = entry.details.resources;
+        const dig = entry.details.digital;
+        
+        const weekNum = entry.week || "-";
+
+        const energyFood = (f.meat.days * CONSUMPTION_CONFIG.food.meat.energy * CONSUMPTION_CONFIG.origin[f.meat.origin]) +
+                           (f.dairy.days * CONSUMPTION_CONFIG.food.dairy.energy * CONSUMPTION_CONFIG.origin[f.dairy.origin]) +
+                           (f.eggsFish.days * CONSUMPTION_CONFIG.food.eggsFish.energy * CONSUMPTION_CONFIG.origin[f.eggsFish.origin]) +
+                           (f.fruits.days * CONSUMPTION_CONFIG.food.fruits.energy * CONSUMPTION_CONFIG.origin[f.fruits.origin]);
+        
+        const heatEnergy = (res.heatHours * 7) * (res.heatLevel / 5) * CONSUMPTION_CONFIG.resources.heatingPowerKW;
+        const energyRes = heatEnergy + Math.max(0, res.elecEnd - res.elecStart) + CONSUMPTION_CONFIG.water[res.water].energy;
+        
+        const energyDig = (dig.music * CONSUMPTION_CONFIG.digital.music.energy) + (dig.video * CONSUMPTION_CONFIG.digital.video.energy) + (dig.ai * CONSUMPTION_CONFIG.digital.ai.energy);
+
+        const co2Food = (f.meat.days * CONSUMPTION_CONFIG.food.meat.co2 * CONSUMPTION_CONFIG.origin[f.meat.origin]) +
+                         (f.dairy.days * CONSUMPTION_CONFIG.food.dairy.co2 * CONSUMPTION_CONFIG.origin[f.dairy.origin]) +
+                         (f.eggsFish.days * CONSUMPTION_CONFIG.food.eggsFish.co2 * CONSUMPTION_CONFIG.origin[f.eggsFish.origin]) +
+                         (f.fruits.days * CONSUMPTION_CONFIG.food.fruits.co2 * CONSUMPTION_CONFIG.origin[f.fruits.origin]);
+        
+        const heatCO2 = (res.heatHours * 7) * (res.heatLevel / 5) * CONSUMPTION_CONFIG.resources.heatingPowerKW * CONSUMPTION_CONFIG.resources.heatingFactor;
+        const co2Res = heatCO2 + (Math.max(0, res.elecEnd - res.elecStart) * CONSUMPTION_CONFIG.resources.electricityFactor) + CONSUMPTION_CONFIG.water[res.water].co2;
+
+        const co2Dig = (dig.music * CONSUMPTION_CONFIG.digital.music.co2) + (dig.video * CONSUMPTION_CONFIG.digital.video.co2) + (dig.ai * CONSUMPTION_CONFIG.digital.ai.co2);
+
+        consRows += createRow([weekNum, "Ernährung", Number(energyFood.toFixed(2)), Number(co2Food.toFixed(2))]);
+        consRows += createRow([weekNum, "Ressourcen", Number(energyRes.toFixed(2)), Number(co2Res.toFixed(2))]);
+        consRows += createRow([weekNum, "Digital", Number(energyDig.toFixed(2)), Number(co2Dig.toFixed(2))]);
+        consRows += createRow([weekNum, "--- TOTAL ---", Number((energyFood+energyRes+energyDig).toFixed(2)), Number((co2Food+co2Res+co2Dig).toFixed(2))]);
+    });
+
+    const xmlHeader = `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40">
+    <Worksheet ss:Name="Mobilitaet"><Table>${mobilityRows}</Table></Worksheet>
+    <Worksheet ss:Name="Konsum"><Table>${consRows}</Table></Worksheet>
+</Workbook>`;
+
+    const blob = new Blob([xmlHeader], { type: 'application/vnd.ms-excel' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    
-    link.setAttribute("href", url);
-    link.setAttribute("download", `CarbonTracker_Export_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
+    link.href = url;
+    link.download = `CarbonTracker_Report_${new Date().toISOString().split('T')[0]}.xml`;
     link.click();
-    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
 };
 
@@ -944,10 +1292,677 @@ window.closeConfirmDialog = function(confirmed) {
     }
 };
 
+
+
+const CONSUMPTION_CONFIG = {
+    food: {
+        meat:      { energy: 8,   co2: 5.0 },
+        dairy:     { energy: 3,   co2: 1.6 },
+        eggsFish:  { energy: 2.5, co2: 1.3 },
+        fruits:    { energy: 1,   co2: 0.5 }
+    },
+
+    origin: {
+        local:   0.9,
+        germany: 1.0,
+        europe:  1.2,
+        world:   1.6,
+        mix:     1.3
+    },
+
+    resources: {
+        electricityFactor: 0.4,
+        heatingFactor:     0.24,
+        heatingPowerKW:    2.0
+    },
+
+    water: {
+        low:  { energy: 0.35, co2: 0.14 },
+        mid:  { energy: 0.6,  co2: 0.24 },
+        high: { energy: 1.0,  co2: 0.40 }
+    },
+
+    digital: {
+        music: { energy: 0.04,  co2: 0.016 },
+        video: { energy: 0.08,  co2: 0.032 },
+        live:  { energy: 0.12,  co2: 0.048 },
+        ai:    { energy: 0.003, co2: 0.0012 }
+    }
+};
+
+const consUI = {
+    currentStep: 0,
+    maxSteps: 3,
+    deleteTargetId: null,
+
+    goToStep(stepIndex) {
+        if (stepIndex >= 0 && stepIndex <= this.maxSteps) {
+            this.currentStep = stepIndex;
+            this.updateStepVisibility();
+        }
+    },
+
+    openModal(entryId = null) {
+        const modal = document.getElementById('cons-modal-overlay');
+        const content = document.getElementById('cons-modal-content');
+
+        if (!entryId) {
+            app.isEditing = false;
+            app.editId = null;
+
+            document.getElementById('cons-modal-title').innerText = "Neue Woche";
+
+            this.resetForm();
+
+            if (this.resetSegmentedControls) {
+                this.resetSegmentedControls();
+            }
+        }
+
+        this.currentStep = 0;
+        this.updateStepVisibility();
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.add('opacity-100');
+            content.classList.remove('translate-y-full');
+        }, 10);
+    },
+
+    closeModal() {
+        const modal = document.getElementById('cons-modal-overlay');
+        const content = document.getElementById('cons-modal-content');
+        
+        modal.classList.remove('opacity-100');
+        content.classList.add('translate-y-full');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            this.resetForm();
+        }, 500);
+    },
+
+    editEntry(id) {
+        const item = app.consumption.find(c => c.id === id);
+        if (!item) return;
+
+        app.isEditing = true;
+        app.editId = id;
+
+        this.openModal(id);
+
+        document.getElementById('cons-modal-title').innerText = "Woche bearbeiten";
+
+        document.getElementById('cons-week').value = item.week;
+
+        const food = item.details.food;
+        const foodTypes = ['meat', 'dairy', 'eggsFish', 'fruits'];
+
+        foodTypes.forEach(type => {
+            const days = food[type].days;
+            const origin = food[type].origin;
+
+            document.getElementById(`in-${type}-days`).value = days;
+            document.getElementById(`val-${type}`).innerText = days + " Tage";
+            this.setSegmentedValue(`${type}-origin`, origin);
+        });
+
+        const res = item.details.resources;
+        document.getElementById('in-elec-start').value = res.elecStart;
+        document.getElementById('in-elec-end').value = res.elecEnd;
+        document.getElementById('in-heat-hours').value = res.heatHours;
+        document.getElementById('in-heat-level').value = res.heatLevel;
+        document.getElementById('val-heat-level').innerText = parseFloat(res.heatLevel).toFixed(1);
+        this.setSegmentedValue('water-usage', res.water);
+
+        const dig = item.details.digital;
+        document.getElementById('in-stream-music').value = dig.music;
+        document.getElementById('in-stream-video').value = dig.video;
+        document.getElementById('in-stream-live').value = dig.live;
+        document.getElementById('in-ai-queries').value = dig.ai;
+    },
+
+    deleteEntry(id) {
+        if (!id) return;
+        this.deleteTargetId = id;
+        
+        const overlay = document.getElementById('cons-confirm-overlay');
+        const box = document.getElementById('cons-confirm-box');
+        
+        overlay.classList.remove('hidden');
+        setTimeout(() => {
+            overlay.classList.add('opacity-100');
+            box.classList.remove('scale-90');
+            box.classList.add('scale-100');
+        }, 10);
+    },
+
+    closeConfirm(confirmed) {
+        const overlay = document.getElementById('cons-confirm-overlay');
+        const box = document.getElementById('cons-confirm-box');
+        
+        if (confirmed && this.deleteTargetId) {
+            this.executeDelete(this.deleteTargetId);
+        }
+
+        overlay.classList.remove('opacity-100');
+        box.classList.add('scale-90');
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            this.deleteTargetId = null;
+        }, 300);
+    },
+
+    executeDelete(id) {
+        app.consumption = app.consumption.filter(item => item.id !== id);
+        localStorage.setItem('consumption', JSON.stringify(app.consumption));
+
+        this.renderList();
+
+        this.closeModal();
+    },
+
+    handleOutsideClick(e) {
+
+        if (e.target === e.currentTarget) {
+            this.closeModal();
+        }
+    },
+    
+    updateStepVisibility() {
+        for (let i = 0; i <= this.maxSteps; i++) {
+            const stepEl = document.getElementById(`cons-step-${i}`);
+            const dotEl = document.getElementById(`step-dot-${i}`);
+            
+            if (stepEl) {
+                stepEl.classList.add('hidden');
+            }
+            
+            if (dotEl) {
+                dotEl.classList.remove('bg-[#00ff9f]');
+                dotEl.classList.add('bg-white/10');
+            }
+        }
+    
+        const currentStepEl = document.getElementById(`cons-step-${this.currentStep}`);
+        const currentDotEl = document.getElementById(`step-dot-${this.currentStep}`);
+
+        const deleteBtn = document.getElementById('cons-btn-delete');
+        if (deleteBtn) {
+            if (app.isEditing && this.currentStep === 0) {
+                deleteBtn.classList.remove('hidden');
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+        }
+
+        if (currentStepEl) {
+            currentStepEl.classList.remove('hidden');
+        }
+        
+        if (currentDotEl) {
+            currentDotEl.classList.add('bg-[#00ff9f]');
+            currentDotEl.classList.remove('bg-white/10');
+        }
+    
+        const prevBtn = document.getElementById('cons-prev-btn');
+        const nextBtn = document.getElementById('cons-next-btn');
+    
+        if (prevBtn) {
+            prevBtn.classList.toggle('hidden', this.currentStep === 0);
+        }
+        
+        if (nextBtn) {
+            nextBtn.innerText = this.currentStep === this.maxSteps ? 'Speichern' : 'Weiter';
+        }
+    },
+
+    next() {
+        if (this.currentStep < this.maxSteps) {
+            this.currentStep++;
+            this.updateStepVisibility();
+        } else {
+            consumptionLogic.saveWeekly();
+        }
+    },
+
+    prev() {
+        if (this.currentStep > 0) {
+            this.currentStep--;
+            this.updateStepVisibility();
+        }
+    },
+
+    resetForm() {
+        const form = document.getElementById('cons-form');
+        if (form) form.reset();
+        
+        document.querySelectorAll('[id^="val-"]').forEach(el => {
+            if (el.id.includes('meat') || el.id.includes('dairy') || el.id.includes('fruits') || el.id.includes('eggsFish')) {
+                el.innerText = "0 Tage";
+            } else if (el.id === 'val-heat-level') {
+                el.innerText = "0.0";
+            }
+        });
+
+        document.querySelectorAll('.origin-btn').forEach(btn => {
+            btn.classList.remove('active', 'bg-white', 'text-black');
+            btn.classList.add('opacity-40');
+            if (btn.dataset.origin === 'germany') {
+                btn.classList.add('active', 'bg-white', 'text-black');
+                btn.classList.remove('opacity-40');
+            }
+        });
+    },
+
+    setSegmentedValue(groupSelector, value) {
+        const group = document.querySelector(`[data-group="${groupSelector}"]`);
+        if (!group) return;
+
+        const btn = group.querySelector(`[data-origin="${value}"], [data-val="${value}"]`);
+        if (btn) {
+            group.querySelectorAll('.origin-btn').forEach(b => {
+                b.classList.remove('active', 'bg-white', 'text-black');
+                b.classList.add('opacity-40');
+            });
+            btn.classList.add('active', 'bg-white', 'text-black');
+            btn.classList.remove('opacity-40');
+            group.dataset.selected = value;
+        }
+    },
+    
+    resetSegmentedControls() {
+        this.setSegmentedValue('meat-origin', 'germany');
+        this.setSegmentedValue('dairy-origin', 'germany');
+        this.setSegmentedValue('eggsFish-origin', 'germany');
+        this.setSegmentedValue('fruits-origin', 'germany');
+        this.setSegmentedValue('water-usage', 'mid');
+    },
+
+    renderList() {
+        const listContainer = document.getElementById('consumption-list');
+        if (!listContainer) return;
+
+        if (!app.consumption || app.consumption.length === 0) {
+            listContainer.innerHTML = `
+                <div class="p-8 border-2 border-dashed border-white/5 rounded-[2rem] text-center text-white/20">
+                    <p class="text-[10px] uppercase font-black tracking-widest">Keine Wochenberichte</p>
+                </div>`;
+            return;
+        }
+
+        const sortedData = [...app.consumption].sort((a, b) => b.week.localeCompare(a.week));
+
+        listContainer.innerHTML = sortedData.map(item => {
+            const [year, week] = item.week.split('-W');
+
+            let foodTag = "🍎 Veggie-Woche";
+            const f = item.details.food;
+            if (parseFloat(f.meat.days) > 0) {
+                foodTag = `🥩 Fleisch (${f.meat.days}d)`;
+            } else if (parseFloat(f.dairy.days) > 4) {
+                foodTag = `🧀 Viel Milch`;
+            } else if (parseFloat(f.fruits.days) > 5) {
+                foodTag = `🥗 Fresh Diet`;
+            }
+
+            const elecUsage = Math.max(0, item.details.resources.elecEnd - item.details.resources.elecStart);
+            const resourceTag = `⚡ ${elecUsage.toFixed(0)} kWh`;
+
+            const streamTime = parseFloat(item.details.digital.music) + 
+                              parseFloat(item.details.digital.video) + 
+                              parseFloat(item.details.digital.live);
+            const digitalTag = `📱 ${streamTime.toFixed(1)}h Web`;
+
+            return `
+            <div onclick="consUI.editEntry(${item.id})" 
+                 class="glass rounded-[2rem] overflow-hidden mb-4 cursor-pointer active:scale-[0.98] transition-all border border-white/5 shadow-lg relative group">
+
+                <div style="background-color: #ffffff; color: black" class="px-5 py-2.5 text-center">
+                    <p class="text-[10px] font-black uppercase tracking-[0.15em]">KW ${week} — ${year}</p>
+                </div>
+
+                <div class="p-5 flex flex-col gap-4">
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-bold text-white/70">
+                            ${foodTag}
+                        </span>
+                        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-bold text-white/70">
+                            ${resourceTag}
+                        </span>
+                        <span class="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] font-bold text-white/70">
+                            ${digitalTag}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[#00ff9f] text-sm">⚡</span>
+                            <span class="text-[11px] font-black text-[#00ff9f]">
+                                ${item.totals.energy.toFixed(1)} <span class="text-[7px] opacity-60 ml-0.5">kWh</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-white/60 text-sm">☁️</span>
+                            <span class="text-[11px] font-black text-white opacity-80">
+                                ${item.totals.co2.toFixed(1)} <span class="text-[7px] opacity-60 ml-0.5">kg CO₂</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+        }).join('');
+
+        this.updateStats();
+        consChart.updateData()
+    },
+
+    updateStats() {
+        const totalCO2 = app.consumption.reduce((sum, item) => sum + item.totals.co2, 0);
+        const statsEl = document.querySelector('#cons-stats span.text-2xl');
+        if (statsEl) {
+            statsEl.innerText = totalCO2.toFixed(1);
+        }
+    }
+};
+
+const consumptionLogic = {
+    saveWeekly() {
+        const weekInput = document.getElementById('cons-week').value;
+        if (!weekInput) {
+            alert("Bitte wählen Sie eine Kalenderwoche aus.");
+            return;
+        }
+
+        const foodTypes = ['meat', 'dairy', 'eggsFish', 'fruits'];
+        let foodEnergy = 0;
+        let foodCO2 = 0;
+
+        foodTypes.forEach(type => {
+            const days = parseFloat(document.getElementById(`in-${type}-days`).value) || 0;
+            const origin = document.querySelector(`[data-group="${type}-origin"]`).dataset.selected || 'germany';
+            const multiplier = CONSUMPTION_CONFIG.origin[origin];
+            
+            foodEnergy += days * CONSUMPTION_CONFIG.food[type].energy * multiplier;
+            foodCO2 += days * CONSUMPTION_CONFIG.food[type].co2 * multiplier;
+        });
+
+        const eStart = parseFloat(document.getElementById('in-elec-start').value) || 0;
+        const eEnd = parseFloat(document.getElementById('in-elec-end').value) || 0;
+        const elecEnergy = Math.max(0, eEnd - eStart);
+        const elecCO2 = elecEnergy * CONSUMPTION_CONFIG.resources.electricityFactor;
+
+        const waterType = document.querySelector('[data-group="water-usage"]').dataset.selected || 'mid';
+        const waterEnergy = CONSUMPTION_CONFIG.water[waterType].energy;
+        const waterCO2 = CONSUMPTION_CONFIG.water[waterType].co2;
+
+        const hHoursDay = parseFloat(document.getElementById('in-heat-hours').value) || 0;
+        const hLevel = parseFloat(document.getElementById('in-heat-level').value) || 0;
+        const heatEnergy = (hHoursDay * 7) * (hLevel / 5) * CONSUMPTION_CONFIG.resources.heatingPowerKW;
+        const heatCO2 = heatEnergy * CONSUMPTION_CONFIG.resources.heatingFactor;
+
+        const dMusic = parseFloat(document.getElementById('in-stream-music').value) || 0;
+        const dVideo = parseFloat(document.getElementById('in-stream-video').value) || 0;
+        const dLive = parseFloat(document.getElementById('in-stream-live').value) || 0;
+        const dAI = parseFloat(document.getElementById('in-ai-queries').value) || 0;
+
+        const digitalEnergy = (dMusic * CONSUMPTION_CONFIG.digital.music.energy) +
+                              (dVideo * CONSUMPTION_CONFIG.digital.video.energy) +
+                              (dLive * CONSUMPTION_CONFIG.digital.live.energy) +
+                              (dAI * CONSUMPTION_CONFIG.digital.ai.energy);
+
+        const digitalCO2 = (dMusic * CONSUMPTION_CONFIG.digital.music.co2) +
+                           (dVideo * CONSUMPTION_CONFIG.digital.video.co2) +
+                           (dLive * CONSUMPTION_CONFIG.digital.live.co2) +
+                           (dAI * CONSUMPTION_CONFIG.digital.ai.co2);
+
+        const totalEnergy = foodEnergy + elecEnergy + waterEnergy + heatEnergy + digitalEnergy;
+        const totalCO2 = foodCO2 + elecCO2 + waterCO2 + heatCO2 + digitalCO2;
+
+        const report = {
+            id: app.isEditing ? app.editId : Date.now(),
+            week: weekInput,
+            totals: {
+                energy: parseFloat(totalEnergy.toFixed(2)),
+                co2: parseFloat(totalCO2.toFixed(2))
+            },
+            details: {
+                food: {
+                    meat: { days: document.getElementById('in-meat-days').value, origin: document.querySelector('[data-group="meat-origin"]').dataset.selected },
+                    dairy: { days: document.getElementById('in-dairy-days').value, origin: document.querySelector('[data-group="dairy-origin"]').dataset.selected },
+                    eggsFish: { days: document.getElementById('in-eggsFish-days').value, origin: document.querySelector('[data-group="eggsFish-origin"]').dataset.selected },
+                    fruits: { days: document.getElementById('in-fruits-days').value, origin: document.querySelector('[data-group="fruits-origin"]').dataset.selected }
+                },
+                resources: {
+                    elecStart: eStart,
+                    elecEnd: eEnd,
+                    water: waterType,
+                    heatHours: hHoursDay,
+                    heatLevel: hLevel
+                },
+                digital: {
+                    music: dMusic,
+                    video: dVideo,
+                    live: dLive,
+                    ai: dAI
+                }
+            }
+        };
+
+        this.pushToStorage(report);
+    },
+
+    pushToStorage(report) {
+        if (app.isEditing) {
+            const index = app.consumption.findIndex(c => c.id === app.editId);
+            if (index !== -1) {
+                app.consumption[index] = report;
+            }
+        } else {
+            app.consumption.push(report);
+        }
+
+        localStorage.setItem('consumption', JSON.stringify(app.consumption));
+
+        consUI.renderList(); 
+
+        consUI.closeModal();
+    }
+};
+
+const consChart = {
+    instance: null,
+    currentMode: 'energy',
+    colors: {
+        food: '#f3ff00',
+        resources: '#ff0055',
+        digital: '#00ff9f'
+    },
+
+    init() {
+        const canvas = document.getElementById('consChartCanvas');
+        if (!canvas) return;
+        
+        if (this.instance) {
+            this.updateData();
+            return;
+        }
+
+        setTimeout(() => {
+            const ctx = canvas.getContext('2d');
+            this.instance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Ernährung', 'Ressourcen', 'Digital'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [this.colors.food, this.colors.resources, this.colors.digital],
+                        borderWidth: 0,
+                        borderRadius: 10,
+                        spacing: 0,
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    cutout: '82%',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: 25 },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    onHover: (evt, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const label = this.instance.data.labels[index];
+                            const value = this.instance.data.datasets[0].data[index];
+                            this.showSegmentStats(label, value);
+                        } else {
+                            this.updateCenterText();
+                        }
+                    }
+                }
+            });
+            this.updateData();
+        }, 50);
+    },
+
+    updateData() {
+        if (!this.instance) return;
+
+        const totals = this.calculateTotals();
+        const dataValues = [totals.food, totals.resources, totals.digital];
+
+        const activeSegments = dataValues.filter(v => v > 0).length;
+        this.instance.data.datasets[0].spacing = activeSegments > 1 ? 5 : 0;
+        
+        this.instance.data.datasets[0].data = dataValues;
+        this.instance.update();
+
+        this.updateCenterText();
+    },
+
+    showSegmentStats(label, value) {
+        const valEl = document.getElementById('cons-total-value');
+        const unitEl = document.getElementById('cons-total-unit');
+        
+        const labelMap = { 'Ernährung': 'food', 'Ressourcen': 'resources', 'Digital': 'digital' };
+        const typeKey = labelMap[label];
+        const unit = this.currentMode === 'energy' ? 'KWH' : 'KG';
+
+        if (valEl) {
+            valEl.innerText = value.toFixed(1);
+            valEl.style.color = "white";
+        }
+        
+        if (unitEl) {
+            unitEl.innerText = `${unit} ${label.toUpperCase()}`;
+            unitEl.style.color = this.colors[typeKey];
+            unitEl.style.opacity = "1";
+        }
+    },
+
+    updateCenterText() {
+        const totals = this.calculateTotals();
+        const totalSum = totals.food + totals.resources + totals.digital;
+        
+        const valEl = document.getElementById('cons-total-value');
+        const unitEl = document.getElementById('cons-total-unit');
+        const unit = this.currentMode === 'energy' ? 'KWH' : 'KG';
+
+        if (valEl) {
+            valEl.innerText = totalSum.toFixed(1);
+            valEl.style.color = "white";
+        }
+        if (unitEl) {
+            unitEl.innerText = `GESAMT ${unit}`;
+            unitEl.style.color = "#00ff9f";
+        }
+    },
+
+    calculateTotals() {
+        let stats = { food: 0, resources: 0, digital: 0 };
+        app.consumption.forEach(week => {
+            const f = week.details.food;
+            const res = week.details.resources;
+            const dig = week.details.digital;
+
+            if (this.currentMode === 'energy') {
+                stats.food += (f.meat.days * CONSUMPTION_CONFIG.food.meat.energy * CONSUMPTION_CONFIG.origin[f.meat.origin]) +
+                              (f.dairy.days * CONSUMPTION_CONFIG.food.dairy.energy * CONSUMPTION_CONFIG.origin[f.dairy.origin]) +
+                              (f.eggsFish.days * CONSUMPTION_CONFIG.food.eggsFish.energy * CONSUMPTION_CONFIG.origin[f.eggsFish.origin]) +
+                              (f.fruits.days * CONSUMPTION_CONFIG.food.fruits.energy * CONSUMPTION_CONFIG.origin[f.fruits.origin]);
+                
+                const heatEnergy = (res.heatHours * 7) * (res.heatLevel / 5) * CONSUMPTION_CONFIG.resources.heatingPowerKW;
+                stats.resources += heatEnergy + Math.max(0, res.elecEnd - res.elecStart) + CONSUMPTION_CONFIG.water[res.water].energy;
+                
+                stats.digital += (dig.music * CONSUMPTION_CONFIG.digital.music.energy) + (dig.video * CONSUMPTION_CONFIG.digital.video.energy) + (dig.live * CONSUMPTION_CONFIG.digital.live.energy) + (dig.ai * CONSUMPTION_CONFIG.digital.ai.energy);
+            } else {
+                stats.food += (f.meat.days * CONSUMPTION_CONFIG.food.meat.co2 * CONSUMPTION_CONFIG.origin[f.meat.origin]) +
+                              (f.dairy.days * CONSUMPTION_CONFIG.food.dairy.co2 * CONSUMPTION_CONFIG.origin[f.dairy.origin]) +
+                              (f.eggsFish.days * CONSUMPTION_CONFIG.food.eggsFish.co2 * CONSUMPTION_CONFIG.origin[f.eggsFish.origin]) +
+                              (f.fruits.days * CONSUMPTION_CONFIG.food.fruits.co2 * CONSUMPTION_CONFIG.origin[f.fruits.origin]);
+                
+                const heatCO2 = (res.heatHours * 7) * (res.heatLevel / 5) * CONSUMPTION_CONFIG.resources.heatingPowerKW * CONSUMPTION_CONFIG.resources.heatingFactor;
+                stats.resources += heatCO2 + (Math.max(0, res.elecEnd - res.elecStart) * CONSUMPTION_CONFIG.resources.electricityFactor) + CONSUMPTION_CONFIG.water[res.water].co2;
+
+                stats.digital += (dig.music * CONSUMPTION_CONFIG.digital.music.co2) + (dig.video * CONSUMPTION_CONFIG.digital.video.co2) + (dig.live * CONSUMPTION_CONFIG.digital.live.co2) + (dig.ai * CONSUMPTION_CONFIG.digital.ai.co2);
+            }
+        });
+        return stats;
+    },
+
+switchMode(mode) {
+    this.currentMode = mode;
+    
+    const btnEnergy = document.getElementById('btn-mode-energy');
+    const btnCO2 = document.getElementById('btn-mode-co2');
+    
+    [btnEnergy, btnCO2].forEach(btn => {
+        btn.className = "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all opacity-40 text-white hover:opacity-70";
+    });
+    
+    const activeBtn = (mode === 'energy') ? btnEnergy : btnCO2;
+    activeBtn.className = "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all opacity-100 text-white";
+
+    this.updateData();
+}
+};
+
+function setupSegmentedControls() {
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.origin-btn') || e.target.closest('.view-btn');
+        if (!btn) return;
+
+        const group = btn.closest('[data-group]');
+        if (!group) return;
+
+        const btnClass = e.target.closest('.origin-btn') ? '.origin-btn' : '.view-btn';
+        group.querySelectorAll(btnClass).forEach(b => {
+            b.classList.remove('active', 'bg-white', 'text-black');
+            b.classList.add('opacity-40');
+        });
+
+        btn.classList.add('active', 'bg-white', 'text-black');
+        btn.classList.remove('opacity-40');
+        group.dataset.selected = btn.dataset.origin || btn.dataset.val;
+    });
+}
+
 window.onload = () => {
     logic.init();
     charts.init();
     render.activitiesList();
+    setupSegmentedControls();
+    consUI.renderList();
+    const savedCons = localStorage.getItem('consumption');
+    if (savedCons) {
+        app.consumption = JSON.parse(savedCons);
+    }
+    consUI.renderList();
+    consChart.init()
 };
 </script>
 </body>

@@ -70,7 +70,7 @@
         </div>
     </nav>
 
-    <div id="view-mobility" class="block">
+    <div id="view-mobility" class="block overflow-auto">
         <div class="px-6 mb-6">
             <div class="flex gap-2 p-1 bg-white/5 rounded-2xl mb-6 mt-14 border border-white/10">
                 <button data-view="dist" class="view-btn flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active">Distanz</button>
@@ -832,71 +832,79 @@ exportToExcel() {
 };
 
 const logic = {
-    init() {
-        const content = document.getElementById('modal-content');
-            if (!content) return;
+init() {
+    const content = document.getElementById('modal-content');
+    if (content) {
+        content.addEventListener('click', (e) => {
+            const btn = e.target.closest('.selectable-btn');
+            if (!btn) return;
 
-            content.addEventListener('click', (e) => {
-                const btn = e.target.closest('.selectable-btn');
-                if (!btn) return;
+            if (btn.classList.contains('main-btn')) {
+                ui.selectMain(btn.dataset.id);
+            } 
+            else if (btn.dataset.group) {
+                const group = btn.dataset.group;
+                currentEntry[group] = (btn.dataset.id === 'true' || btn.dataset.id === 'false') 
+                    ? (btn.dataset.id === 'true') 
+                    : btn.dataset.id;
             
-                if (btn.classList.contains('main-btn')) {
-                    ui.selectMain(btn.dataset.id);
-                } 
-                else if (btn.dataset.group) {
-                    const group = btn.dataset.group;
-                    currentEntry[group] = (btn.dataset.id === 'true' || btn.dataset.id === 'false') 
-                        ? (btn.dataset.id === 'true') 
-                        : btn.dataset.id;
-                
-                    document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                }
-                else if (btn.classList.contains('sub-btn')) {
-                    ui.selectSub(btn.dataset.id);
-                }
-            
-                this.validate();
-            });
+                document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+            else if (btn.classList.contains('sub-btn')) {
+                ui.selectSub(btn.dataset.id);
+            }
+        
+            this.validate();
+        });
+    }
 
-            const inputs = ['in-dist', 'in-time', 'in-date'];
-            inputs.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.addEventListener('input', () => this.validate());
-                    el.addEventListener('blur', () => this.validate());
-                }
-            });
+    const inputs = ['in-dist', 'in-time', 'in-date'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', () => this.validate());
+            el.addEventListener('blur', () => this.validate());
+        }
+    });
 
-        document.getElementById('modal-overlay').addEventListener('click', function(e) {
-
-            if (e.target === this) {
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
                 ui.closeModal();
             }
         });
+    }
 
-        const filterContainer = document.querySelector('nav .flex');
-        if (filterContainer) {
-            filterContainer.addEventListener('click', (e) => {
-                const btn = e.target.closest('.filter-btn');
-                if (btn) {
-                    this.toggleFilter(btn.dataset.id);
-                }
+    const filterNav = document.querySelector('nav.px-6'); 
+    if (filterNav) {
+        filterNav.onclick = (e) => {
+            const btn = e.target.closest('.filter-btn');
+            if (btn) {
+                this.toggleFilter(btn.dataset.id);
+            }
+        };
+    }
+
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.view-btn').forEach(b => {
+                b.classList.add('opacity-40');
+                b.classList.remove('active');
             });
-        }
-
-        document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('.view-btn').forEach(b => b.classList.add('opacity-40'));
-                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.remove('opacity-40');
-                btn.classList.add('active');
-            
-                currentView = btn.dataset.view;
+            btn.classList.remove('opacity-40');
+            btn.classList.add('active');
+        
+            currentView = btn.dataset.view;
+            if (typeof charts !== 'undefined' && charts.update) {
                 charts.update();
-            };
-        });
-    },
+            }
+        };
+    });
+
+    this.validate();
+},
 
     saveEntry() {
         const distInput = document.getElementById('in-dist');
@@ -1003,7 +1011,10 @@ const logic = {
             activeFilters.clear();
             activeFilters.add('all');
         } else {
-            activeFilters.delete('all');
+            if (activeFilters.has('all')) {
+                activeFilters.delete('all');
+            }
+
             if (activeFilters.has(id)) {
                 activeFilters.delete(id);
                 if (activeFilters.size === 0) activeFilters.add('all');
@@ -1014,7 +1025,7 @@ const logic = {
 
         this.updateFilterUI();
         render.activitiesList();
-        charts.update();
+        if (typeof charts !== 'undefined') charts.update(); 
     },
 
     updateFilterUI() {

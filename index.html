@@ -103,7 +103,7 @@
             </div>
         </main>
 
-        <button onclick="ui.openModal()" class="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-2xl shadow-[0_10px_40px_rgba(255,255,255,0.2)] flex items-center justify-center text-black active:scale-90 active:rotate-90 transition-all z-50">
+        <button onclick="ui.openModal()" class="fixed bottom-8 right-8 w-16 h-16 bg-white rounded-2xl shadow-[0_10px_40px_rgba(255,255,255,0.2)] flex items-center justify-center text-black active:scale-90 transition-all z-50">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         </button>
     </div>
@@ -741,11 +741,27 @@ exportToExcel() {
         return;
     }
 
+    const escapeXml = (unsafe) => {
+        if (typeof unsafe !== 'string') return unsafe;
+        return unsafe.replace(/[<>&'"]/g, (c) => {
+            switch (c) {
+                case '<': return '&lt;';
+                case '>': return '&gt;';
+                case '&': return '&amp;';
+                case '\'': return '&apos;';
+                case '"': return '&quot;';
+            }
+        });
+    };
+
     const createRow = (cells) => {
-        return '<Row>' + cells.map(cell => {
-            const type = typeof cell === 'number' ? 'Number' : 'String';
-            return `<Cell><Data ss:Type="${type}">${cell}</Data></Cell>`;
-        }).join('') + '</Row>';
+        const rowContent = cells.map(cell => {
+            const isNum = typeof cell === 'number';
+            const type = isNum ? 'Number' : 'String';
+            const value = isNum ? cell : escapeXml(cell);
+            return `<Cell><Data ss:Type="${type}">${value}</Data></Cell>`;
+        }).join('');
+        return `<Row>${rowContent}</Row>`;
     };
 
     const mobilityHeaders = ["Datum", "Typ", "Kategorie", "KM", "Minuten", "kWh", "kg CO2"];
@@ -770,28 +786,26 @@ exportToExcel() {
         const f = entry.details.food;
         const res = entry.details.resources;
         const dig = entry.details.digital;
-        
         const weekNum = entry.week || "-";
 
-        const energyFood = (f.meat.days * CONSUMPTION_CONFIG.food.meat.energy * CONSUMPTION_CONFIG.origin[f.meat.origin]) +
-                           (f.dairy.days * CONSUMPTION_CONFIG.food.dairy.energy * CONSUMPTION_CONFIG.origin[f.dairy.origin]) +
-                           (f.eggsFish.days * CONSUMPTION_CONFIG.food.eggsFish.energy * CONSUMPTION_CONFIG.origin[f.eggsFish.origin]) +
-                           (f.fruits.days * CONSUMPTION_CONFIG.food.fruits.energy * CONSUMPTION_CONFIG.origin[f.fruits.origin]);
-        
-        const heatEnergy = (res.heatHours * 7) * (res.heatLevel / 5) * CONSUMPTION_CONFIG.resources.heatingPowerKW;
-        const energyRes = heatEnergy + Math.max(0, res.elecEnd - res.elecStart) + CONSUMPTION_CONFIG.water[res.water].energy;
-        
-        const energyDig = (dig.music * CONSUMPTION_CONFIG.digital.music.energy) + (dig.video * CONSUMPTION_CONFIG.digital.video.energy) + (dig.ai * CONSUMPTION_CONFIG.digital.ai.energy);
+        const getOrigin = (key) => CONSUMPTION_CONFIG.origin[key] || 1.0;
 
-        const co2Food = (f.meat.days * CONSUMPTION_CONFIG.food.meat.co2 * CONSUMPTION_CONFIG.origin[f.meat.origin]) +
-                         (f.dairy.days * CONSUMPTION_CONFIG.food.dairy.co2 * CONSUMPTION_CONFIG.origin[f.dairy.origin]) +
-                         (f.eggsFish.days * CONSUMPTION_CONFIG.food.eggsFish.co2 * CONSUMPTION_CONFIG.origin[f.eggsFish.origin]) +
-                         (f.fruits.days * CONSUMPTION_CONFIG.food.fruits.co2 * CONSUMPTION_CONFIG.origin[f.fruits.origin]);
+        const energyFood = ((f.meat?.days || 0) * CONSUMPTION_CONFIG.food.meat.energy * getOrigin(f.meat?.origin)) +
+                           ((f.dairy?.days || 0) * CONSUMPTION_CONFIG.food.dairy.energy * getOrigin(f.dairy?.origin)) +
+                           ((f.eggsFish?.days || 0) * CONSUMPTION_CONFIG.food.eggsFish.energy * getOrigin(f.eggsFish?.origin)) +
+                           ((f.fruits?.days || 0) * CONSUMPTION_CONFIG.food.fruits.energy * getOrigin(f.fruits?.origin));
         
-        const heatCO2 = (res.heatHours * 7) * (res.heatLevel / 5) * CONSUMPTION_CONFIG.resources.heatingPowerKW * CONSUMPTION_CONFIG.resources.heatingFactor;
-        const co2Res = heatCO2 + (Math.max(0, res.elecEnd - res.elecStart) * CONSUMPTION_CONFIG.resources.electricityFactor) + CONSUMPTION_CONFIG.water[res.water].co2;
+        const heatEnergy = ((res.heatHours || 0) * 7) * ((res.heatLevel || 0) / 5) * CONSUMPTION_CONFIG.resources.heatingPowerKW;
+        const energyRes = heatEnergy + Math.max(0, (res.elecEnd || 0) - (res.elecStart || 0)) + (CONSUMPTION_CONFIG.water[res.water]?.energy || 0);
+        const energyDig = ((dig.music || 0) * CONSUMPTION_CONFIG.digital.music.energy) + ((dig.video || 0) * CONSUMPTION_CONFIG.digital.video.energy) + ((dig.ai || 0) * CONSUMPTION_CONFIG.digital.ai.energy);
 
-        const co2Dig = (dig.music * CONSUMPTION_CONFIG.digital.music.co2) + (dig.video * CONSUMPTION_CONFIG.digital.video.co2) + (dig.ai * CONSUMPTION_CONFIG.digital.ai.co2);
+        const co2Food = ((f.meat?.days || 0) * CONSUMPTION_CONFIG.food.meat.co2 * getOrigin(f.meat?.origin)) +
+                        ((f.dairy?.days || 0) * CONSUMPTION_CONFIG.food.dairy.co2 * getOrigin(f.dairy?.origin)) +
+                        ((f.eggsFish?.days || 0) * CONSUMPTION_CONFIG.food.eggsFish.co2 * getOrigin(f.eggsFish?.origin)) +
+                        ((f.fruits?.days || 0) * CONSUMPTION_CONFIG.food.fruits.co2 * getOrigin(f.fruits?.origin));
+        
+        const co2Res = (heatEnergy * CONSUMPTION_CONFIG.resources.heatingFactor) + (Math.max(0, (res.elecEnd || 0) - (res.elecStart || 0)) * CONSUMPTION_CONFIG.resources.electricityFactor) + (CONSUMPTION_CONFIG.water[res.water]?.co2 || 0);
+        const co2Dig = ((dig.music || 0) * CONSUMPTION_CONFIG.digital.music.co2) + ((dig.video || 0) * CONSUMPTION_CONFIG.digital.video.co2) + ((dig.ai || 0) * CONSUMPTION_CONFIG.digital.ai.co2);
 
         consRows += createRow([weekNum, "Ernährung", Number(energyFood.toFixed(2)), Number(co2Food.toFixed(2))]);
         consRows += createRow([weekNum, "Ressourcen", Number(energyRes.toFixed(2)), Number(co2Res.toFixed(2))]);
@@ -801,8 +815,8 @@ exportToExcel() {
 
     const xmlHeader = `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40">
-    <Worksheet ss:Name="Mobilitaet"><Table>${mobilityRows}</Table></Worksheet>
-    <Worksheet ss:Name="Konsum"><Table>${consRows}</Table></Worksheet>
+<Worksheet ss:Name="Mobilitaet"><Table>${mobilityRows}</Table></Worksheet>
+<Worksheet ss:Name="Konsum"><Table>${consRows}</Table></Worksheet>
 </Workbook>`;
 
     const blob = new Blob([xmlHeader], { type: 'application/vnd.ms-excel' });
@@ -810,7 +824,9 @@ exportToExcel() {
     const link = document.createElement("a");
     link.href = url;
     link.download = `CarbonTracker_Report_${new Date().toISOString().split('T')[0]}.xml`;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
 };
@@ -914,7 +930,7 @@ const logic = {
             road: selectedRoad
         };
 
-        if (isEditing) {
+        if (app.isEditing) {
             const index = activities.findIndex(a => a.id === editId);
             if (index !== -1) {
                 activities[index] = { ...activities[index], ...entryData };
@@ -1380,6 +1396,7 @@ const consUI = {
             modal.classList.add('hidden');
             this.resetForm();
         }, 500);
+        app.isEditing = false;
     },
 
     editEntry(id) {
@@ -1523,6 +1540,7 @@ const consUI = {
             this.updateStepVisibility();
         } else {
             consumptionLogic.saveWeekly();
+            app.isEditing = false;
         }
     },
 
@@ -1884,35 +1902,51 @@ const consChart = {
 
     calculateTotals() {
         let stats = { food: 0, resources: 0, digital: 0 };
-        app.consumption.forEach(week => {
+        const consumptionData = app.consumption || [];
+
+        consumptionData.forEach(week => {
             const f = week.details.food;
             const res = week.details.resources;
             const dig = week.details.digital;
 
-            if (this.currentMode === 'energy') {
-                stats.food += (f.meat.days * CONSUMPTION_CONFIG.food.meat.energy * CONSUMPTION_CONFIG.origin[f.meat.origin]) +
-                              (f.dairy.days * CONSUMPTION_CONFIG.food.dairy.energy * CONSUMPTION_CONFIG.origin[f.dairy.origin]) +
-                              (f.eggsFish.days * CONSUMPTION_CONFIG.food.eggsFish.energy * CONSUMPTION_CONFIG.origin[f.eggsFish.origin]) +
-                              (f.fruits.days * CONSUMPTION_CONFIG.food.fruits.energy * CONSUMPTION_CONFIG.origin[f.fruits.origin]);
-                
-                const heatEnergy = (res.heatHours * 7) * (res.heatLevel / 5) * CONSUMPTION_CONFIG.resources.heatingPowerKW;
-                stats.resources += heatEnergy + Math.max(0, res.elecEnd - res.elecStart) + CONSUMPTION_CONFIG.water[res.water].energy;
-                
-                stats.digital += (dig.music * CONSUMPTION_CONFIG.digital.music.energy) + (dig.video * CONSUMPTION_CONFIG.digital.video.energy) + (dig.live * CONSUMPTION_CONFIG.digital.live.energy) + (dig.ai * CONSUMPTION_CONFIG.digital.ai.energy);
-            } else {
-                stats.food += (f.meat.days * CONSUMPTION_CONFIG.food.meat.co2 * CONSUMPTION_CONFIG.origin[f.meat.origin]) +
-                              (f.dairy.days * CONSUMPTION_CONFIG.food.dairy.co2 * CONSUMPTION_CONFIG.origin[f.dairy.origin]) +
-                              (f.eggsFish.days * CONSUMPTION_CONFIG.food.eggsFish.co2 * CONSUMPTION_CONFIG.origin[f.eggsFish.origin]) +
-                              (f.fruits.days * CONSUMPTION_CONFIG.food.fruits.co2 * CONSUMPTION_CONFIG.origin[f.fruits.origin]);
-                
-                const heatCO2 = (res.heatHours * 7) * (res.heatLevel / 5) * CONSUMPTION_CONFIG.resources.heatingPowerKW * CONSUMPTION_CONFIG.resources.heatingFactor;
-                stats.resources += heatCO2 + (Math.max(0, res.elecEnd - res.elecStart) * CONSUMPTION_CONFIG.resources.electricityFactor) + CONSUMPTION_CONFIG.water[res.water].co2;
+            const getOrigin = (originKey) => CONSUMPTION_CONFIG.origin[originKey] || 1.0;
 
-                stats.digital += (dig.music * CONSUMPTION_CONFIG.digital.music.co2) + (dig.video * CONSUMPTION_CONFIG.digital.video.co2) + (dig.live * CONSUMPTION_CONFIG.digital.live.co2) + (dig.ai * CONSUMPTION_CONFIG.digital.ai.co2);
+            if (this.currentMode === 'energy') {
+                stats.food += (Number(f.meat.days || 0) * CONSUMPTION_CONFIG.food.meat.energy * getOrigin(f.meat.origin)) +
+                              (Number(f.dairy.days || 0) * CONSUMPTION_CONFIG.food.dairy.energy * getOrigin(f.dairy.origin)) +
+                              (Number(f.eggsFish.days || 0) * CONSUMPTION_CONFIG.food.eggsFish.energy * getOrigin(f.eggsFish.origin)) +
+                              (Number(f.fruits.days || 0) * CONSUMPTION_CONFIG.food.fruits.energy * getOrigin(f.fruits.origin));
+
+                const heatEnergy = (Number(res.heatHours || 0) * 7) * (Number(res.heatLevel || 0) / 5) * CONSUMPTION_CONFIG.resources.heatingPowerKW;
+                const elecDiff = Math.max(0, Number(res.elecEnd || 0) - Number(res.elecStart || 0));
+                const waterEnergy = CONSUMPTION_CONFIG.water[res.water]?.energy || 0;
+
+                stats.resources += heatEnergy + elecDiff + waterEnergy;
+
+                stats.digital += (Number(dig.music || 0) * CONSUMPTION_CONFIG.digital.music.energy) + 
+                                 (Number(dig.video || 0) * CONSUMPTION_CONFIG.digital.video.energy) + 
+                                 (Number(dig.live || 0) * CONSUMPTION_CONFIG.digital.live.energy) + 
+                                 (Number(dig.ai || 0) * CONSUMPTION_CONFIG.digital.ai.energy);
+            } else {
+                stats.food += (Number(f.meat.days || 0) * CONSUMPTION_CONFIG.food.meat.co2 * getOrigin(f.meat.origin)) +
+                              (Number(f.dairy.days || 0) * CONSUMPTION_CONFIG.food.dairy.co2 * getOrigin(f.dairy.origin)) +
+                              (Number(f.eggsFish.days || 0) * CONSUMPTION_CONFIG.food.eggsFish.co2 * getOrigin(f.eggsFish.origin)) +
+                              (Number(f.fruits.days || 0) * CONSUMPTION_CONFIG.food.fruits.co2 * getOrigin(f.fruits.origin));
+
+                const heatCO2 = (Number(res.heatHours || 0) * 7) * (Number(res.heatLevel || 0) / 5) * CONSUMPTION_CONFIG.resources.heatingPowerKW * CONSUMPTION_CONFIG.resources.heatingFactor;
+                const elecCO2 = Math.max(0, Number(res.elecEnd || 0) - Number(res.elecStart || 0)) * CONSUMPTION_CONFIG.resources.electricityFactor;
+                const waterCO2 = CONSUMPTION_CONFIG.water[res.water]?.co2 || 0;
+
+                stats.resources += heatCO2 + elecCO2 + waterCO2;
+
+                stats.digital += (Number(dig.music || 0) * CONSUMPTION_CONFIG.digital.music.co2) + 
+                                 (Number(dig.video || 0) * CONSUMPTION_CONFIG.digital.video.co2) + 
+                                 (Number(dig.live || 0) * CONSUMPTION_CONFIG.digital.live.co2) + 
+                                 (Number(dig.ai || 0) * CONSUMPTION_CONFIG.digital.ai.co2);
             }
         });
-        return stats;
-    },
+    return stats;
+},
 
 switchMode(mode) {
     this.currentMode = mode;
